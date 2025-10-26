@@ -1,11 +1,11 @@
 #pragma once
 
+#include "esphome/components/api/custom_api_device.h"
+#include "esphome/components/api/api_server.h"
 #include "esphome/components/sensor/sensor.h"
+#include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
-#include "esphome/components/api/custom_api_device.h"
-#include "esphome/components/text_sensor/text_sensor.h"
-#include "esphome/components/api/api_server.h"
 #include <vector>
 
 // change NO_CALIBRATION_CODE to CALIBRATION_CODE if calibration is OK
@@ -39,9 +39,10 @@ namespace esphome {
       float get_setup_priority() const override;
       void update() override;
       // Setter pour le text_sensor qui affichera le résultat
-      void set_debug_text_sensor(text_sensor::TextSensor *debug_sensor) { debug_sensor_ = debug_sensor; }
-      // Nouvelle méthode qui sera appelée par le service API
+      void set_debug_text_sensor_hex(text_sensor::TextSensor *debug_sensor_hex) { debug_sensor_hex_ = debug_sensor_hex; }
+      void set_debug_text_sensor_bin(text_sensor::TextSensor *debug_sensor_bin) { debug_sensor_bin_ = debug_sensor_bin; }
       void read_register_service(std::string register_number_str, int size);
+      void write_register_service(std::string register_number_str, std::string value_str);
 
     protected:
       // Sensors
@@ -65,8 +66,9 @@ namespace esphome {
       uint32_t coefficient_by_unit_(uint32_t unit);
       bool chip_init_();
       void get_data_();
-      // Capteur pour afficher le résultat
-      text_sensor::TextSensor *debug_sensor_{nullptr};
+      // Capteurs pour afficher le résultat
+      text_sensor::TextSensor *debug_sensor_hex_{nullptr};
+      text_sensor::TextSensor *debug_sensor_bin_{nullptr};
 
       // Méthode lecture registre
       std::vector<uint8_t> read_register(int reg, int size);
@@ -78,4 +80,5 @@ namespace esphome {
     };
 
   }  // namespace cse7761
+
 }  // namespace esphome

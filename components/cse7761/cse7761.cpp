@@ -390,6 +390,8 @@ namespace esphome {
 
       svalue = this->read_(CSE7761_REG_RMSIA, 3);
       this->data_.current_rms[0] = ((svalue >= 0x800000) || (svalue < 1600)) ? 0 : svalue;  // No load threshold of 10mA
+      svalue = this->read_(CSE7761_REG_RMSIB, 3);
+      this->data_.current_rms[1] = svalue;  // mesure du bruit
 //      uvalue = this->read_(CSE7761_REG_UFREQ, 2);
 //      ESP_LOGD(TAG, "frequency data %x", uvalue);
 //      this->data_.frequency = (uvalue >= 0x8000) ? 0 : uvalue;
@@ -399,6 +401,8 @@ namespace esphome {
 
       svalue = this->read_(CSE7761_REG_POWERPA, 4);
       this->data_.active_power[0] = (0 == this->data_.current_rms[0]) ? 0 : ((int32_t) svalue);
+      svalue = this->read_(CSE7761_REG_POWERPB, 4);
+      this->data_.active_power[1] = (int32_t) svalue; // mesure du bruit
 
       // convert values and publish to sensors
 
@@ -413,8 +417,8 @@ namespace esphome {
 
       for (uint8_t channel = 0; channel < 2; channel++) {
         // Active power = PowerPA * PowerPAC * 1000 / 0x80000000
-        float active_power = (float) this->data_.active_power[channel] / this->coefficient_by_unit_(POWER_PAC);  // W
-        float amps = (float) this->data_.current_rms[channel] / this->coefficient_by_unit_(RMS_IAC);             // A
+        float active_power = (float) this->data_.active_power[channel] / this->coefficient_by_unit_(POWER_PAC+channel);  // W
+        float amps = (float) this->data_.current_rms[channel] / this->coefficient_by_unit_(RMS_IAC+channel);             // A
         ESP_LOGD(TAG, "Channel %d power %f W, current %f A", channel + 1, active_power, amps);
         if (channel == 0) {
           if (this->power_sensor_1_ != nullptr) {
@@ -448,34 +452,40 @@ namespace esphome {
       unsigned long val = std::strtoul(register_number_str.c_str(), &end_ptr, 0);
       if (end_ptr == register_number_str.c_str() || *end_ptr != '\0') {
         ESP_LOGE(TAG, "Erreur: Entrée de registre invalide ou non-numérique: '%s'", register_number_str.c_str());
-        this->debug_sensor_->publish_state("Erreur: Format d'entrée invalide.");
+        this->debug_sensor_hex_->publish_state("Erreur: Format d'entrée invalide.");
+        this->debug_sensor_bin_->publish_state("Erreur: Format d'entrée invalide.");
         return;
       }
       if (val > 0xFFFFFFFF) {
         ESP_LOGE(TAG, "Erreur: Le registre est trop grand (hors de la plage 32-bit)");
-        this->debug_sensor_->publish_state("Erreur: Registre hors plage.");
+        this->debug_sensor_hex_->publish_state("Erreur: Registre hors plage.");
+        this->debug_sensor_bin_->publish_state("Erreur: Registre hors plage.");
         return;
       }
       register_number = (uint32_t)val;
 
       std::vector<uint8_t> raw_data = read_register(register_number, size);
 
-      std::stringstream ss;
+      std::stringstream ss_hex,ss_bin;
       for (uint8_t byte_value : raw_data){
-//        // en hexa
-//        ss << std::uppercase << std::hex << std::setw(2) << std::setfill('0')
-//        << (int)byte_value << " ";
+        // en hexa
+        ss_hex << std::uppercase << std::hex << std::setw(2) << std::setfill('0')
+        << (int)byte_value << " ";
         // en binaire
         for (int i = 7; i >= 0; --i) {
-          ss << ((byte_value >> i) & 1);
+          ss_bin << ((byte_value >> i) & 1);
         }
-        ss << " ";
+        ss_bin << " ";
       }
 
-      std::string hex_data = ss.str();
-      ESP_LOGI(TAG, "Contenu du registre 0x%X: %s", register_number, hex_data.c_str());
-      if (debug_sensor_) {
-        debug_sensor_->publish_state(hex_data);
+      std::string hex_data = ss_hex.str();
+      std::string bin_data = ss_bin.str();
+      ESP_LOGI(TAG, "Contenu du registre 0x%X: %s=%s", register_number, hex_data.c_str(), bin_data.c_str());
+      if (debug_sensor_hex_) {
+        debug_sensor_hex_->publish_state(hex_data);
+      }
+      if (debug_sensor_bin_) {
+        debug_sensor_bin_->publish_state(bin_data);
       }
     }
 
@@ -542,6 +552,73 @@ namespace esphome {
       ESP_LOGI(TAG, "Lecture réussie du registre 0x%X. %u octets de données.", register_number, data.size());
       return data;
     }
+    
+    //***********************************************************************************************
+    // Fonstion write_register_service : fonction de débogage avancée permettant d'écrire dans des
+    // registres directement depuis homeassistant
+    //***********************************************************************************************
+    void CSE7761Component::write_register_service(std::string register_number_str, std::string value_str) {
+      ESP_LOGD(TAG, "Service appelé: Écriture du registre %s avec la valeur %s.", register_number_str, value_str);
+
+      uint8_t register_number;
+      uint16_t value;
+
+      // --- 1. Traitement de l'adresse du registre ---
+      char *end_ptr_reg;
+      unsigned long reg_val = std::strtoul(register_number_str.c_str(), &end_ptr_reg, 0); // La base 0 permet auto-détection (0x pour hex)
+      if (end_ptr_reg == register_number_str.c_str() || *end_ptr_reg != '\0' || reg_val > 0xFF) {
+        ESP_LOGE(TAG, "Erreur: Adresse de registre invalide ou hors plage (0-0xFF): '%s'", register_number_str.c_str());
+        if (this->debug_sensor_hex_) {
+            this->debug_sensor_hex_->publish_state("Erreur: Adresse de registre invalide.");
+        }
+         if (this->debug_sensor_bin_) {
+            this->debug_sensor_bin_->publish_state("Erreur: Adresse de registre invalide.");
+        }
+       return;
+      }
+      register_number = (uint8_t)reg_val;
+
+      // --- 2. Traitement de la valeur à écrire (16-bit) ---
+      char *end_ptr_val;
+      unsigned long val_to_write = std::strtoul(value_str.c_str(), &end_ptr_val, 0);
+      if (end_ptr_val == value_str.c_str() || *end_ptr_val != '\0' || val_to_write > 0xFFFF) {
+        ESP_LOGE(TAG, "Erreur: Valeur d'écriture invalide ou hors plage (0-0xFFFF): '%s'", value_str.c_str());
+        if (this->debug_sensor_hex_) {
+            this->debug_sensor_hex_->publish_state("Erreur: Valeur d'écriture invalide.");
+        }
+        if (this->debug_sensor_bin_) {
+            this->debug_sensor_bin_->publish_state("Erreur: Valeur d'écriture invalide.");
+        }
+        return;
+      }
+      value = (uint16_t)val_to_write;
+
+      // --- 3. Exécution de l'écriture ---
+     // Activer l'écriture sur les registres protégés (si nécessaire)
+      this->write_(CSE7761_SPECIAL_COMMAND, CSE7761_CMD_ENABLE_WRITE);
+      
+      // Effectuer l'écriture. On suppose que l'utilisateur inclura 0x80 si c'est un registre protégé.
+      // Si l'utilisateur entre "0" pour le registre, il ne se passe rien (data est 0).
+      this->write_(register_number | 0x80, value);
+      
+      // Désactiver l'écriture
+      this->write_(CSE7761_SPECIAL_COMMAND, CSE7761_CMD_CLOSE_WRITE);
+
+      // --- 4. Log et publication du résultat ---
+      std::stringstream ss;
+      ss << std::uppercase << std::hex << "OK: Écrit 0x" << std::setw(4) << std::setfill('0')
+         << value << " dans le registre 0x" << std::setw(2) << std::setfill('0')
+         << (int)register_number;
+
+      std::string result_msg = ss.str();
+      ESP_LOGI(TAG, "%s", result_msg.c_str());
+      if (this->debug_sensor_hex_) {
+        this->debug_sensor_hex_->publish_state(result_msg);
+      }
+      if (this->debug_sensor_bin_) {
+        this->debug_sensor_bin_->publish_state(result_msg);
+      }
+    }    
 
   }  // namespace cse7761
 }  // namespace esphome
