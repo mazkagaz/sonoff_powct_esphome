@@ -41,13 +41,17 @@ Ensuite, vous aurez besoin d'un **Adaptateur Série USB-à-TTL** pour établir l
 
 ---
 
-### **Étape 3 : Flasher le Firmware (ESPHome)**
+### **Étape 3 : Téléversement du micrologiciel (ESPHome)**
 
-Une fois le matériel connecté, vous pouvez procéder au téléchargement du firmware en utilisant la plateforme ESPHome.
+Une fois le matériel connecté, vous pouvez procéder au téléversement du micrologiciel à l'aide de la plateforme ESPHome.
 
-1.  Placez l'appareil en **Mode Flashe/Bootloader** (cela implique généralement d'appuyer et de maintenir un bouton tout en connectant le GND).
-2.  Utilisez la **méthode de flashe standard d'ESPHome** (par exemple, le Tableau de Bord ESPHome, la ligne de commande ou le Web Flasher) pour télécharger le firmware.
-3.  Utilisez les **modèles de configuration YAML** fournis à la racine de ce dépôt.
+1. Placez l'appareil en **Mode Flashage** (ou **Bootloader**). Cela peut être réalisé en appuyant et en maintenant le bouton tout en connectant la broche GND, mais il se peut que vous deviez également jouer avec la broche +3.3V pour trouver le bon timing de connection...
+2. Utilisez la **méthode de flashage standard d'ESPHome** (par exemple, le tableau de bord ESPHome, la ligne de commande ou le Web Flasher) pour téléverser le micrologiciel.
+3. Utilisez les **fichiers de configuration YAML** fournis à la racine de ce dépôt.
+
+> **Il se peut que vous deviez générer le micrologiciel, le télécharger sur votre PC, puis utiliser un outil externe (**esptool**) pour le flasher sur votre appareil.**
+>
+> **Lorsque vous utilisez esptool, vous pourriez avoir besoin d'utiliser l'option** `-nostub`.
 
 🔗 **Tutoriel Vidéo :** Si vous êtes nouveau dans ce processus, ce guide pourrait vous être utile : [Comment Installer ESPHome sur Sonoff Basic et Home Assistant](http://www.youtube.com/watch?v=4Q3whVVVwYw) par Reid Projects.
 

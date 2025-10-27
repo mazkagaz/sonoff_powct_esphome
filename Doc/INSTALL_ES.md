@@ -41,13 +41,17 @@ A continuación, necesitará un **Adaptador Serial USB-a-TTL** para establecer e
 
 ---
 
-### **Paso 3: Flasheo del Firmware (ESPHome)**
+### **Paso 3: Subida del Firmware (ESPHome)**
 
-Una vez que el hardware esté conectado, puede proceder con la carga del firmware utilizando la plataforma ESPHome.
+Una vez que el hardware esté conectado, puede proceder con la subida del firmware usando la plataforma ESPHome.
 
-1.  Coloque el dispositivo en **Modo de Flasheo/Bootloader** (esto generalmente implica presionar y mantener presionado un botón mientras conecta el GND).
-2.  Utilice el **método de flasheo estándar de ESPHome** (p. ej., el Dashboard de ESPHome, la línea de comandos o el Web Flasher) para cargar el firmware.
-3.  Utilice las **plantillas de configuración YAML** proporcionadas en la raíz de este repositorio.
+1. Ponga el dispositivo en **Modo Flasheo** (o **Modo Bootloader**). Esto se puede lograr presionando y manteniendo presionado el botón mientras conecta el pin GND, pero es posible que también deba experimentar con el pin de +3.3V para encontrar el momento exacto de la conexión.
+2. Utilice el **método de flasheo estándar de ESPHome** (por ejemplo, el Panel de Control de ESPHome, la línea de comandos o el Web Flasher) para subir el firmware.
+3. Utilice las **plantillas de configuración YAML** proporcionadas en la raíz de este repositorio.
+
+> **Es posible que deba generar el firmware, descargarlo en su PC y luego usar una herramienta externa (**esptool**) para flashearlo en su dispositivo.**
+>
+> **Cuando use esptool, es posible que necesite usar la opción** `-nostub`.
 
 🔗 **Video Tutorial:** Si es nuevo en este proceso, esta guía podría serle útil: [How to Install ESPHome on Sonoff Basic and Home Assistant](http://www.youtube.com/watch?v=4Q3whVVVwYw) por Reid Projects.
 

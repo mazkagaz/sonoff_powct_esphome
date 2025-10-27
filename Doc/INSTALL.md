@@ -45,9 +45,13 @@ Next, you'll need an **USB-to-TTL Serial Adapter** to bridge the connection betw
 
 Once the hardware is connected, you can proceed with the firmware upload using the ESPHome platform.
 
-1.  Place the device into **Flashing/Bootloader Mode** (this usually involves pressing and holding a button while connecting the GND).
+1.  Place the device into **Flashing/Bootloader Mode**. This can be achieved by pressing and holding the button while connecting the GND pin, but you may also need to experiment with the +3.3V pin to find the right connection timing...
 2.  Use the **standard ESPHome flashing method** (e.g., the ESPHome Dashboard, command line, or the Web Flasher) to upload the firmware.
 3.  Utilize the **YAML configuration templates** provided in the root of this repository.
+
+**You may have to generate the firmware and download it to your PC (last option in ESPhome), and then use an external tool (**`esptool`**) to flash it onto your device.**
+
+**With** `esptool`**, you may have to use the** `-nostub` **option.**
 
 🔗 **Video Tutorial:** If you are new to this process, you might find this guide helpful: [How to Install ESPHome on Sonoff Basic and Home Assistant](http://www.youtube.com/watch?v=4Q3whVVVwYw) by Reid Projects.
 
