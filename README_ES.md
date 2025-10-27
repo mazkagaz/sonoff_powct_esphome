@@ -56,3 +56,5 @@ Para comenzar la instalación y configuración de mi dispositivo, consulte las g
 ¡Las contribuciones, los informes de errores y las solicitudes de funciones son bienvenidos! No dude en abrir una *issue* o una *pull request*.
 
 **Nota:** Por favor, asegúrese de que todas las solicitudes (issues/pull requests) estén escritas en **francés** o en **inglés**.
+
+### [![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-PayPal-blue?style=for-the-badge&logo=paypal)](https://paypal.me/mazkagaz)

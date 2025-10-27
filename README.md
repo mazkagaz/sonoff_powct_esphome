@@ -54,3 +54,5 @@ To begin the installation and configuration of my device, please consult the det
 ### 🤝 Contributing
 
 Contributions, bug reports, and feature requests are welcome! Feel free to open an *issue* or a *pull request*.
+
+### [![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-PayPal-blue?style=for-the-badge&logo=paypal)](https://paypal.me/mazkagaz)

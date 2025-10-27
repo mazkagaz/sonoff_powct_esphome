@@ -54,3 +54,5 @@ Pour commencer l'installation et la configuration de mon appareil, veuillez cons
 ### 🤝 Contribuer
 
 Les contributions, les rapports de bugs et les demandes de fonctionnalités sont les bienvenus ! N'hésitez pas à ouvrir une *issue* ou une *pull request*.
+
+### [![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-PayPal-blue?style=for-the-badge&logo=paypal)](https://paypal.me/mazkagaz)
