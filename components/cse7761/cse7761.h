@@ -6,6 +6,7 @@
 #include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
+#include "esphome/core/preferences.h"
 #include <vector>
 
 
@@ -24,6 +25,11 @@ namespace esphome {
       bool ready = false;
     };
 
+    struct EnergyDataStruct {
+      double received;
+      double exported;
+    };
+
     /// This class implements support for the CSE7761 UART power sensor.
     class CSE7761Component : public PollingComponent, public uart::UARTDevice, public api::CustomAPIDevice {
     public:
@@ -32,6 +38,8 @@ namespace esphome {
       void set_current_1_sensor(sensor::Sensor *current_sensor_1) { current_sensor_1_ = current_sensor_1; }
       void set_active_power_2_sensor(sensor::Sensor *power_sensor_2) { power_sensor_2_ = power_sensor_2; }
       void set_current_2_sensor(sensor::Sensor *current_sensor_2) { current_sensor_2_ = current_sensor_2; }
+      void set_energy_received_sensor(sensor::Sensor *energy_received) { energy_received_ = energy_received; }
+      void set_energy_exported_sensor(sensor::Sensor *energy_exported) { energy_exported_ = energy_exported; }
       void setup() override;
       void dump_config() override;
       float get_setup_priority() const override;
@@ -52,20 +60,29 @@ namespace esphome {
       sensor::Sensor *current_sensor_2_{nullptr};
       text_sensor::TextSensor *debug_sensor_hex_{nullptr};
       text_sensor::TextSensor *debug_sensor_bin_{nullptr};
+      sensor::Sensor *energy_received_{nullptr};
+      sensor::Sensor *energy_exported_{nullptr};
       CSE7761DataStruct data_;
+      esphome::ESPPreferenceObject pref_;
       // calibration
       bool calibration_enabled_{false};
+      bool ok_energy_{false};
       uint8_t calibration_count_{0};
       double sum_current_B_{0};
       double sum_power_B_{0};
       double active_current_A_{0};
       double active_current_B_{0};
+      double last_active_power_A_{0};
       double active_power_A_{0};
       double active_power_B_{0};
       double software_current_offset_A_{0};
       double software_current_offset_B_{0};
       double software_power_offset_A_{0};
       double software_power_offset_B_{0};
+      uint32_t last_update_time_{0};
+      uint32_t last_save_time_{0};
+      double accumulated_energy_received_{0.0f};
+      double accumulated_energy_exported_{0.0f};
 
       void write_(uint8_t reg, uint16_t data);
       bool read_once_(uint8_t reg, uint8_t size, uint32_t *value);

@@ -7,6 +7,11 @@ esp32:
   framework:
     type: esp-idf
 
+preferences:
+  # time between energies saving on flash memory
+  # not less than 1h !!! Or it may cause damages to memory too soon
+  flash_write_interval: 12h
+
 logger:
    level: INFO
 
@@ -86,19 +91,16 @@ sensor:
     voltage:
       name: Voltage
       id: v_sensor
-      unit_of_measurement: 'V'
       icon: mdi:sine-wave
     current_1:
       name: Current A
       id: a_sensor_1
-      unit_of_measurement: 'A'
       accuracy_decimals: 3
       icon: mdi:current-ac
 # current_2 only for debug purpose
 #    current_2:
 #      name: Current B
 #      id: a_sensor_2
-#      unit_of_measurement: 'A'
 #      accuracy_decimals: 3
 #      icon: mdi:current-ac
     active_power_1:
@@ -117,14 +119,20 @@ sensor:
 #      name: Power B
 #      id: w_sensor_2
 #      icon: mdi:flash
-#      on_value_range:
-#        - above: 4.0
-#          then:
-#            - light.turn_on: switch_led
-#        - below: 3.0
-#          then:
-#            - light.turn_off: switch_led
+    energy_received:
+      name: Energy received
+      id: E_received
+      icon: mdi:lightning-bolt
+      accuracy_decimals: 3
+      state_class: total_increasing
+    energy_exported:
+      name: Energy exported
+      id: E_exported
+      icon: mdi:lightning-bolt
+      accuracy_decimals: 3
+      state_class: total_increasing
 
+  # keeped for compare with new software energy meter
   - platform: total_daily_energy
     name: Total Daily Energy
     power_id: w_sensor

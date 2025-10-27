@@ -7,10 +7,13 @@ from esphome.const import (
     DEVICE_CLASS_CURRENT,
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_VOLTAGE,
+    DEVICE_CLASS_ENERGY,
     STATE_CLASS_MEASUREMENT,
+    STATE_CLASS_TOTAL_INCREASING,
     UNIT_AMPERE,
     UNIT_VOLT,
     UNIT_WATT,
+    UNIT_KILOWATT_HOURS,
 )
 
 CODEOWNERS = ["@berfenger", "@mazkagaz"]
@@ -24,6 +27,8 @@ CONF_CURRENT_1 = "current_1"
 CONF_CURRENT_2 = "current_2"
 CONF_ACTIVE_POWER_1 = "active_power_1"
 CONF_ACTIVE_POWER_2 = "active_power_2"
+CONF_ENERGY_RECEIVED = "energy_received"
+CONF_ENERGY_EXPORTED = "energy_exported"
 CONF_DEBUG_SENSOR_HEX_ID = "debug_sensor_hex_id"
 CONF_DEBUG_SENSOR_BIN_ID = "debug_sensor_bin_id"
 
@@ -61,6 +66,18 @@ CONFIG_SCHEMA = (
                 device_class=DEVICE_CLASS_POWER,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
+            cv.Optional(CONF_ENERGY_RECEIVED): sensor.sensor_schema(
+                unit_of_measurement=UNIT_KILOWATT_HOURS,
+                accuracy_decimals=3,
+                device_class=DEVICE_CLASS_ENERGY,
+                state_class=STATE_CLASS_TOTAL_INCREASING,
+            ),
+            cv.Optional(CONF_ENERGY_EXPORTED): sensor.sensor_schema(
+                unit_of_measurement=UNIT_KILOWATT_HOURS,
+                accuracy_decimals=3,
+                device_class=DEVICE_CLASS_ENERGY,
+                state_class=STATE_CLASS_TOTAL_INCREASING,
+            ),
             cv.Optional(CONF_DEBUG_SENSOR_HEX_ID): cv.use_id(text_sensor.TextSensor),
             cv.Optional(CONF_DEBUG_SENSOR_BIN_ID): cv.use_id(text_sensor.TextSensor),
         }
@@ -86,6 +103,8 @@ async def to_code(config):
         CONF_CURRENT_2,
         CONF_ACTIVE_POWER_1,
         CONF_ACTIVE_POWER_2,
+        CONF_ENERGY_RECEIVED,
+        CONF_ENERGY_EXPORTED,
     ]:
         if key not in config:
             continue

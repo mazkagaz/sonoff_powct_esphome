@@ -74,6 +74,19 @@ namespace esphome {
         this->write_(CSE7761_SPECIAL_COMMAND, CSE7761_CMD_CLOSE_WRITE);
         ESP_LOGD(TAG, "CSE7761 found");
         this->data_.ready = true;
+        // Static numeric identifier (random) 0x1F2B4A7D
+        this->pref_ = global_preferences->make_preference<EnergyDataStruct>(0x1F2B4A7D, true);
+        EnergyDataStruct saved_values;
+
+        if (this->pref_.load(&saved_values)) {
+          this->accumulated_energy_received_ = saved_values.received;
+          this->accumulated_energy_exported_ = saved_values.exported;
+          ESP_LOGCONFIG(TAG, "Loaded accumulated energy: %.3f Wh (Received), %.3f Wh (Exported)", this->accumulated_energy_received_, this->accumulated_energy_exported_);
+        } else {
+          ESP_LOGCONFIG(TAG, "No accumulated energy found, starting from 0.0 Wh.");
+          this->accumulated_energy_received_ = 0.0f;
+          this->accumulated_energy_exported_ = 0.0f;
+        }
       } else {
         this->mark_failed();
       }
@@ -385,12 +398,38 @@ namespace esphome {
 //      float frequency = 3579545/8/((float) this->data_.frequency);
 //      float angle = (float) (frequency-50 < frequency-60) ? (0.0805*(float) this->data_.angle)  : (0.0965*(float) this->data_.angle);
 
+      uint32_t now = esphome::millis();
       svalue = this->read_(CSE7761_REG_POWERPA, 4);
       this->data_.active_power[0] = (int32_t) svalue;
       this->active_power_A_ = (((float) this->data_.active_power[0]) / this->coefficient_by_unit_(POWER_PAC))/std::numbers::pi+this->software_power_offset_A_;
       if (this->power_sensor_1_ != nullptr) {
         this->power_sensor_1_->publish_state(this->active_power_A_);
       }
+      if (!this->ok_energy_){
+        this->last_active_power_A_ = this->active_power_A_;
+        this->last_update_time_ = (double) now;
+        this->ok_energy_ = true;
+      }
+      else{
+        double time_delta_s = ((double)now - this->last_update_time_) / 1000.0f;
+        this->last_update_time_ = (double) now;
+        double mean_power = (this->last_active_power_A_ + this->active_power_A_) / 2.0f;
+        this->last_active_power_A_ = this->active_power_A_;
+        // Energy = Power (W) * Delta Time (s) / 3600 (s/h) = Wh
+        if (mean_power > 0.0f){
+          this->accumulated_energy_received_ += (mean_power * time_delta_s) / 3600.0f;
+          if (this->energy_received_ != nullptr) {
+            this->energy_received_->publish_state(this->accumulated_energy_received_ / 1000.0f); // Publish in kWh
+          }
+        }
+        else{ //mean_power <= 0.0f
+          this->accumulated_energy_exported_ += (mean_power * time_delta_s) / 3600.0f;
+          if (this->energy_exported_ != nullptr) {
+            this->energy_exported_->publish_state(this->accumulated_energy_exported_ / 1000.0f); // Publish in kWh
+          }
+        }
+      }
+
 
       svalue = this->read_(CSE7761_REG_POWERPB, 4);
       this->data_.active_power[1] = (int32_t) svalue; // mesure du bruit
@@ -430,6 +469,20 @@ namespace esphome {
         if (this->calibration_count_ >= CALIBRATION_MEASUREMENTS) {
           this->perform_calibration_write_();
         }
+      }
+
+
+      // save every 12 hours
+      if (this->last_save_time_ == 0 || (esphome::millis() - this->last_save_time_) >= 3600000*12) {
+        this->last_save_time_ = esphome::millis();
+
+        // Utilisation de la structure pour la sauvegarde
+        EnergyDataStruct current_values = {
+          .received = this->accumulated_energy_received_,
+          .exported = this->accumulated_energy_exported_
+        };
+        this->pref_.save(&current_values);
+        ESP_LOGV(TAG, "Saving accumulated energy: %.3f Wh (R), %.3f Wh (E)", this->accumulated_energy_received_, this->accumulated_energy_exported_);
       }
 
     }
