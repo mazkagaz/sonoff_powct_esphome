@@ -56,5 +56,3 @@ Once the hardware is connected, you can proceed with the firmware upload using t
 🔗 **Video Tutorial:** If you are new to this process, you might find this guide helpful: [How to Install ESPHome on Sonoff Basic and Home Assistant](http://www.youtube.com/watch?v=4Q3whVVVwYw) by Reid Projects.
 
 ***
-
-http://googleusercontent.com/youtube_content/3
