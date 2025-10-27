@@ -13,7 +13,7 @@ First, you must **open the device casing** while it is **powered OFF** (unplugge
 Inside the device, you need to **solder four connector wires** to the clearly marked programming points on the board: **3.3V, TX, RX, and GND**. These are the standard connections required for flashing ESP-based devices.
 
 **_Example of soldering points on the Sonoff POW CT board:_**
-[http://googleusercontent.com/image_collection/image_retrieval/13319779826066690398]
+![Pinout Sonoff POW CT](https://github.com/mazkagaz/sonoff_powct_esphome/blob/main/Images/PCB.jpg)
 
 | Pin | Function |
 | :--- | :--- |

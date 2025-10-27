@@ -13,7 +13,7 @@ Premièrement, vous devez **ouvrir le boîtier de l'appareil** pendant qu'il est
 À l'intérieur de l'appareil, vous devez **souder quatre fils de connexion** aux points de programmation clairement marqués sur la carte : **3.3V, TX, RX et GND**. Ce sont les connexions standard requises pour flasher les appareils basés sur ESP.
 
 **_Exemple des points de soudure sur la carte Sonoff POW CT :_**
-[http://googleusercontent.com/image_collection/image_retrieval/13319779826066690398]
+![Pinout Sonoff POW CT](https://github.com/mazkagaz/sonoff_powct_esphome/blob/main/Images/PCB.jpg)
 
 | Broche | Fonction |
 | :--- | :--- |
