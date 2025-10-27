@@ -17,6 +17,10 @@ This custom ESPHome firmware allows me to fully utilize the Sonoff POW CT, provi
     * Reading of **positive** (consumption) and **negative** (production) current and power values.
     * Fast updates, with a new value per second.
 
+* **Separate Energy Meters**
+    * Direct reading of accumulated energy, with dedicated energy sensors for **import** (total consumption) and **export** (total production).
+    * Energies are backed up to the flash memory.
+
 * **Advanced Debugging Tools**
     * Built-in functions to directly read and write to the measurement component registers via Home Assistant **Actions**:
         * `my_sonoff_powct_read_register`
@@ -30,12 +34,14 @@ This custom ESPHome firmware allows me to fully utilize the Sonoff POW CT, provi
 
 ## 🚀 Next Steps (Roadmap)
 
-I am actively working on improving this configuration. Planned features for upcoming versions include:
+I am actively working on improving this configuration.
 
-* **Separate Energy Meters**
-    * Direct reading of accumulated energy, with dedicated energy sensors for **import** (total consumption) and **export** (total production).
+* **More configuration flexibility**
+    * Calibration values access.
+    * Switch to choose signed or unsigned measurements.
+    * ... Tell me what would be useful.
 * **Additional Diagnostics**
-    * Addition of extra diagnostic sensors (Voltage, Power Factor, etc.).
+    * Addition of extra diagnostic sensors. Tell me what you wish.
 
 ## 📚 Documentation & Guides
 

@@ -17,6 +17,10 @@ Ce firmware ESPHome sur mesure me permet d'exploiter pleinement le Sonoff POW CT
     * Lecture des valeurs de courant et de puissance **positives** (consommation) et **négatives** (production).
     * Mises à jour rapides, avec une nouvelle valeur par seconde.
 
+* **Compteurs d'Énergie Séparés**
+    * Lecture directe de l'énergie accumulée, avec des capteurs d'énergie dédiés pour l'**importation** (consommation totale) et l'**exportation** (production totale).
+    * Les énergies sont sauvegardées dans la mémoire flash.
+
 * **Outils de Débogage Avancés**
     * Fonctions intégrées pour lire et écrire directement dans les registres du composant de mesure via les **Actions** de Home Assistant :
         * `my_sonoff_powct_read_register`
@@ -32,10 +36,12 @@ Ce firmware ESPHome sur mesure me permet d'exploiter pleinement le Sonoff POW CT
 
 Je travaille activement à l'amélioration de cette configuration. Les fonctionnalités prévues pour les prochaines versions sont :
 
-* **Compteurs d'Énergie Séparés**
-    * Lecture directe de l'énergie accumulée, avec des capteurs d'énergie dédiés pour l'**importation** (consommation totale) et l'**exportation** (production totale).
+* **Plus de Flexibilité de Configuration**
+    * Accès aux valeurs de calibrage.
+    * Option pour choisir des mesures signées ou non-signées.
+    * ... Dites-moi ce qui vous serait utile.
 * **Ajout de Diagnostics**
-    * Ajout de capteurs de diagnostic supplémentaires (Tension, Facteur de puissance, etc.).
+    * Ajout de capteurs de diagnostic supplémentaires. Dites-moi ce que vous souhaitez.
 
 ## 📚 Documentation & Guides
 

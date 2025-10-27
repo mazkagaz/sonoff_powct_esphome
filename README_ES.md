@@ -17,6 +17,10 @@ Este firmware ESPHome personalizado me permite utilizar completamente el Sonoff 
     * Lectura de valores de corriente y potencia **positivos** (consumo) y **negativos** (producción).
     * Actualizaciones rápidas, con un nuevo valor por segundo.
 
+* **Contadores de Energía Separados**
+    * Lectura directa de la energía acumulada, con sensores de energía dedicados para la **importación** (consumo total) y la **exportación** (producción total).
+    * Las energías se guardan en la memoria flash.
+
 * **Herramientas de Depuración Avanzadas**
     * Funciones integradas para leer y escribir directamente en los registros del componente de medición a través de las **Acciones** de Home Assistant:
         * `my_sonoff_powct_read_register`
@@ -32,10 +36,12 @@ Este firmware ESPHome personalizado me permite utilizar completamente el Sonoff 
 
 Estoy trabajando activamente para mejorar esta configuración. Las funciones previstas para las próximas versiones son:
 
-* **Contadores de Energía Separados**
-    * Lectura directa de la energía acumulada, con sensores de energía dedicados para la **importación** (consumo total) y la **exportación** (producción total).
+* **Más Flexibilidad de Configuración**
+    * Acceso a los valores de calibración.
+    * Opción para elegir mediciones firmadas o no firmadas (o: con signo o sin signo).
+    * ... Díganme qué les sería útil.
 * **Adición de Diagnósticos**
-    * Adición de sensores de diagnóstico adicionales (Voltaje, Factor de Potencia, etc.).
+    * Adición de sensores de diagnóstico adicionales. Díganme lo que desean.
 
 ## 📚 Documentación y Guías
 
