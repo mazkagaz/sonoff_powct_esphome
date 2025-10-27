@@ -82,9 +82,6 @@ async def to_code(config):
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
     
-    #await api.setup_component(config)
-    #cg.add(api.COMPONENT.setup_dependency(var)) 
-
     for key in [
         CONF_VOLTAGE,
         CONF_CURRENT_1,
@@ -104,3 +101,4 @@ async def to_code(config):
     if debug_sensor_bin_config := config.get(CONF_DEBUG_SENSOR_BIN_ID):
         debug_sensor_bin = await cg.get_variable(debug_sensor_bin_config)
         cg.add(var.set_debug_text_sensor_bin(debug_sensor_bin))
+

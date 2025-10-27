@@ -8,8 +8,6 @@
 #include "esphome/core/component.h"
 #include <vector>
 
-// change NO_CALIBRATION_CODE to CALIBRATION_CODE if calibration is OK
-#define NO_CALIBRATION_CODE
 
 namespace esphome {
   namespace cse7761 {
@@ -18,7 +16,7 @@ namespace esphome {
       uint16_t angle = 0;
       uint16_t frequency = 0;
       uint32_t voltage_rms = 0;
-      uint32_t current_rms[2] = {0};
+      int32_t current_rms[2] = {0};
       uint32_t energy[2] = {0};
       int32_t active_power[2] = {0};
       uint16_t coefficient[8] = {0};
@@ -43,6 +41,7 @@ namespace esphome {
       void set_debug_text_sensor_bin(text_sensor::TextSensor *debug_sensor_bin) { debug_sensor_bin_ = debug_sensor_bin; }
       void read_register_service(std::string register_number_str, int size);
       void write_register_service(std::string register_number_str, std::string value_str);
+      void set_calibration_mode(bool state);
 
     protected:
       // Sensors
@@ -53,12 +52,19 @@ namespace esphome {
       sensor::Sensor *current_sensor_2_{nullptr};
       CSE7761DataStruct data_;
       // Variables d'état pour la calibration
-      bool calibration_done_{false};
+      bool calibration_enabled_{false};
+      //bool calibration_done_{false};
       uint8_t calibration_count_{0};
-      uint64_t sum_current_B_{0}; // Somme brute des valeurs de Courant B
-      int64_t sum_power_B_{0};    // Somme brute des valeurs de Puissance B
-      int32_t software_current_offset_{0};
-      int32_t software_power_offset_{0};
+      double sum_current_B_{0}; // Somme brute des valeurs de Courant B
+      double sum_power_B_{0};    // Somme brute des valeurs de Puissance B
+      double active_current_A_{0};
+      double active_current_B_{0};
+      double active_power_A_{0};
+      double active_power_B_{0};
+      double software_current_offset_A_{0};
+      double software_current_offset_B_{0};
+      double software_power_offset_A_{0};
+      double software_power_offset_B_{0};
 
       void write_(uint8_t reg, uint16_t data);
       bool read_once_(uint8_t reg, uint8_t size, uint32_t *value);
@@ -73,10 +79,8 @@ namespace esphome {
       // Méthode lecture registre
       std::vector<uint8_t> read_register(int reg, int size);
 
-#ifdef CALIBRATION_CODE
       // calibration des offsets
       void perform_calibration_write_();
-#endif
     };
 
   }  // namespace cse7761

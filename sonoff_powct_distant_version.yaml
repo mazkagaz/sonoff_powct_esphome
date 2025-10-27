@@ -4,6 +4,8 @@ esphome:
 
 esp32:
   board: nodemcu-32s
+  framework:
+    type: esp-idf
 
 logger:
    level: INFO
@@ -11,20 +13,23 @@ logger:
 api:
   encryption:
     key: ">>>>>>>>PUT HERE YOUR OWN KEY<<<<<<<<<<<"
-  reboot_timeout: 5min # Attendre 5 minutes avant de redémarrer si l'API est perdue
-  
-#   custom_services: True
+  reboot_timeout: 5min
+  homeassistant_services: True
   services:
     - service: read_register
       variables:
-        # Correspond aux arguments de la fonction C++: read_register_service(int register_number, int size)
         register_number: string
         size: int
       then:
-        # L'action LAMBDA qui appelle la fonction C++ sur l'instance de composant.
-        # L'ID du composant est 'cse7761_comp'
         - lambda: |-
             id(cse7761_comp).read_register_service(register_number, size);
+    - service: write_register
+      variables:
+        register_number: string
+        regiter_value: string
+      then:
+        - lambda: |-
+            id(cse7761_comp).write_register_service(register_number, regiter_value);
 
 ota:
   - platform: esphome
@@ -33,15 +38,15 @@ ota:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-  # Fallback hotspot (captive portal) in case wifi connection fails
+
   ap:
     ssid: ">>>>>>>>PUT HERE YOUR OWN FALLBACK SSID<<<<<<<<<<<"
     password: ">>>>>>>>PUT HERE YOUR OWN PASSWORD<<<<<<<<<<<"
 
 web_server:
-  ota: false # OTA in captive portal
-  log: false # no log on web page
-  local: true # all page libs in component
+  ota: false
+  log: false
+  local: true
   version: 3
 
 captive_portal:
@@ -51,7 +56,7 @@ time:
     id: homeassistant_time
 
 external_components:
-  - source: github://mazkagaz/sonoff_powct_esphome@v1.0.0 # github personnal component directory
+  - source: github://mazkagaz/sonoff_powct_esphome@main
     components: [cse7761] # components to be taken remotely
 
 uart:
@@ -61,42 +66,44 @@ uart:
   parity: EVEN
   stop_bits: 1
 
-# Déclaration du text_sensor en premier pour être certain que l'ID existe
+# Debug text_sensor : cse7761 register acces
 text_sensor:
   - platform: template
-    id: lecture_registre_debug
-    name: "CSE7761 Lecture Registre"
+    id: lecture_registre_debug_hex
+    name: "CSE7761 Lecture Registre (hexa)"
     entity_category: diagnostic
-    # Le Text Sensor peut être mis en mode interne si vous ne voulez pas le voir dans l'interface par défaut
-#    internal: true 
+  - platform: template
+    id: lecture_registre_debug_bin
+    name: "CSE7761 Lecture Registre (binaire)"
+    entity_category: diagnostic
     
-# my cse7761 component version
 sensor:
-  # AJOUT D'UN ID EXPLICITE POUR LE COMPOSANT PRINCIPAL
   - platform: cse7761
-    id: cse7761_comp # ID explicite pour l'instance du composant
+    id: cse7761_comp
     update_interval: 2s
-    debug_sensor_id: lecture_registre_debug
-    current_1:
-      name: Current
-      id: a_sensor
-      unit_of_measurement: 'A'
-      accuracy_decimals: 3
-      icon: mdi:current-ac
-      filters:
-        # Measurement divided by the PI number
-        - lambda: return x / PI;
+    debug_sensor_hex_id: lecture_registre_debug_hex
+    debug_sensor_bin_id: lecture_registre_debug_bin
     voltage:
       name: Voltage
       id: v_sensor
       unit_of_measurement: 'V'
       icon: mdi:sine-wave
+    current_1:
+      name: Current A
+      id: a_sensor_1
+      unit_of_measurement: 'A'
+      accuracy_decimals: 3
+      icon: mdi:current-ac
+# current_2 only for debug purpose
+#    current_2:
+#      name: Current B
+#      id: a_sensor_2
+#      unit_of_measurement: 'A'
+#      accuracy_decimals: 3
+#      icon: mdi:current-ac
     active_power_1:
-      name: Power
-      id: w_sensor
-      filters:
-        # Measurement divided by the PI number
-        - lambda: return x / PI;
+      name: Power A
+      id: w_sensor_1
       icon: mdi:flash
       on_value_range:
         - above: 4.0
@@ -105,6 +112,18 @@ sensor:
         - below: 3.0
           then:
             - light.turn_off: switch_led
+# active_power_2 only for debug purpose
+#    active_power_2:
+#      name: Power B
+#      id: w_sensor_2
+#      icon: mdi:flash
+#      on_value_range:
+#        - above: 4.0
+#          then:
+#            - light.turn_on: switch_led
+#        - below: 3.0
+#          then:
+#            - light.turn_off: switch_led
 
   - platform: total_daily_energy
     name: Total Daily Energy
@@ -119,13 +138,10 @@ sensor:
       # Multiplication factor from W to kW is 0.001
       - multiply: 0.001
 
-  - platform: template
+  - platform: internal_temperature
     name: ESP32 Internal Temp
-    device_class: temperature
-    unit_of_measurement: °C
     id: esp32_temp
-    icon: mdi:thermometer
-    lambda: return temperatureRead();
+    update_interval: 60s
 
   - platform: template
     name: Power Factor
@@ -193,6 +209,16 @@ output:
       inverted: False
 
 switch:
+  - platform: template
+    name: CSE7761 Calibration Mode
+    id: cse7761_calibration_switch
+    icon: mdi:ruler
+    # L'état est toujours OFF par défaut (calibration désactivée)
+    optimistic: true
+    turn_on_action:
+      - lambda: 'id(cse7761_comp).set_calibration_mode(true);'
+    turn_off_action:
+      - lambda: 'id(cse7761_comp).set_calibration_mode(false);'
   - platform: gpio
     name: Relay
     pin: GPIO21

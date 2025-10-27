@@ -30,7 +30,6 @@ namespace esphome {
     static const uint8_t CSE7761_REG_EMUCON2 = 0x13;    // (2) Metering control register 2 (0x0001)
     static const uint8_t CSE7761_REG_PULSE1SEL = 0x1D;  // (2) Pin function output select register (0x3210)
 
-#ifdef CALIBRATION_CODE
     // registres des offsets
     static const uint8_t CSE7761_REG_POWER_PA_OFFSET = 0x0A; // PowerPAOS (Active Power Offset - 32bit)
     static const uint8_t CSE7761_REG_POWER_PB_OFFSET = 0x0B; // PowerPAOS (Active Power Offset - 32bit)
@@ -38,8 +37,9 @@ namespace esphome {
     static const uint8_t CSE7761_REG_RMS_IB_OFFSET = 0x0F; // RmsIAOS (Current RMS Offset - 16bit)
 
     // Définir le nombre de mesures de calibration
-    static const int CALIBRATION_MEASUREMENTS = 10;
-#endif
+    static const int CALIBRATION_MEASUREMENTS = 20;
+    static const float CALIBRATION_CURRENT_A_B_SCALE_FACTOR = 10.46; // see Doc/CALIBRATION.md
+    static const float CALIBRATION_POWER_A_B_SCALE_FACTOR = -8.89; // see Doc/CALIBRATION.md
 
     static const uint8_t CSE7761_REG_ANGLE = 0x22;      // (2) The phase angle between current and voltage (0x0000)
     static const uint8_t CSE7761_REG_UFREQ = 0x23;      // (2) The effective value of channel A current (0x0000)
@@ -80,85 +80,54 @@ namespace esphome {
       }
     }
 
-#ifdef CALIBRATION_CODE
+    //***********************************************************************************************
+    // Fonction set_calibration_mode : active/désactive le processus de calibration
+    //***********************************************************************************************
+    void CSE7761Component::set_calibration_mode(bool state) {
+      if (this->calibration_enabled_ != state) {
+        this->calibration_enabled_ = state;
+        ESP_LOGI(TAG, "Calibration mode %s", state ? "ENABLED" : "DISABLED");
+        // Optionnel : réinitialiser les sommes si la calibration est désactivée
+        if (!state) {
+          this->calibration_count_ = 0;
+          this->sum_current_B_ = 0;
+          this->sum_power_B_ = 0;
+        }
+      }
+    }
+
     //***********************************************************************************************
     // Fonction perform_calibration_write_ : vise à calibrer les offset de mesure en utilisant le
-    // bruit mesuré sur le channel B qui est à vide.
-    // Pour l'instant ça ne marche pas car je n'arrive pas à écrire dans les registres d'offset
-    // et je ne sais pas pourquoi ça ne fonctionne pas.
-    // Lorsque ça fonctionnera, au lieu d'écrire dans les offset du channel B, je laisserai le 
-    // channel B avec son bruit et je corrigerai périodiquement l'offset du channel A.
-    // Pourquoi périodiquement :  parce que l'offset est probablement sensible aux conditions
-    // d'utilisation de la puce (température, etc...). Donc recalibrer périodiquement peut permettre
-    // d'éliminer les fluctuations d'offset.
-    // Pourquoi calibrer alors que ce sont des valeurs qui peuvent être jugées négligeables pour
-    // la mesure : parce que je voudrais mesurer la fréquence du signal qui est très sensible au
-    // bruit et que pour l'instant je n'arrive pas à obtenir cette mesure. J'émets l'hypothèse,
-    // peut-être fausse, que le signal de tension est trop bruité pour l'instant.
-    // De plus l'offset n'est pas si négligeable : retourner le tore de mesure du courant sur de 
-    // faibles puissances permet de constater que ce décalage est tout à fait mesurable.
-    // Cet offset pourrait être corrigé de façon logicielle mais cela ne gèglerait pas les erreurs
-    // internes à tous les calculs faits directement dans la puce.
+    // bruit mesuré sur le channel B qui est à vide : voir Doc/CALIBRATION.md
     //***********************************************************************************************
     void CSE7761Component::perform_calibration_write_() {
-      if (this->calibration_done_){return;}
-      
-      ESP_LOGI(TAG, "Calibration de l'offset terminée. Calcul et écriture des offsets du CANAL B.");
 
-      ESP_LOGI(TAG, "DEBUG: Sums (Count=%u): Current_B_Sum=%" PRIu64 ", Power_B_Sum=%" PRId64,
-               this->calibration_count_, this->sum_current_B_, this->sum_power_B_);
-
-      // --- Calcul des Moyennes Flottantes ---
-      float calibration_count_F = (float)this->calibration_count_; // 50.0f
-      double avg_current = (double)this->sum_current_B_ / calibration_count_F;
-      double avg_power = (double)this->sum_power_B_ / calibration_count_F;
-
-      // 1. COURANT B (RmsIBOS)
-      // L'offset est l'opposé de la moyenne, divisé par le facteur 256.0f (CSE7761 datasheet pour 24 bits -> 16 bits)
-      // Le résultat doit être casté en int16_t avant l'écriture.
-      // avg_current est 2152
-      int16_t rmsibos = (int16_t)round(-(avg_current / 256.0f));
-
-      // 2. PUISSANCE B (PBOS)
-      // L'offset est l'opposé de la moyenne, divisé par le facteur 16.0f (CSE7761 datasheet pour 32 bits -> 16 bits)
-      // avg_power est -36239
-      int16_t pbos = (int16_t)round(-(avg_power / 16.0f));
-
-      // --- Préparation pour l'écriture (l'écriture UART utilise des uint16_t) ---
-      uint16_t offset_I_reg = (uint16_t)rmsibos;
-      uint16_t offset_P_reg = (uint16_t)pbos;
-
-      ESP_LOGI(TAG, "DEBUG: Averages: I_RAW=0x%08X (Dec %.0f), P_RAW=%d (Dec %.0f)",
-               (uint32_t)avg_current, avg_current, (int32_t)avg_power, avg_power);
-      ESP_LOGI(TAG, "Valeurs de correction 16-bit écrites: RmsIBOS(0x0F)=0x%04X, PBOS(0x0B)=0x%04X", offset_I_reg, offset_P_reg);
-
+      float calibration_count_F = (float)this->calibration_count_;
+      this->software_current_offset_B_ -= this->sum_current_B_ / calibration_count_F;
+      this->software_power_offset_B_ -= this->sum_power_B_ / calibration_count_F;
+      this->software_current_offset_A_ = CALIBRATION_CURRENT_A_B_SCALE_FACTOR * this->software_current_offset_B_;
+      this->software_power_offset_A_ = CALIBRATION_POWER_A_B_SCALE_FACTOR * this->software_power_offset_B_;
+/* IMPOSSIBLE d'utiliser les registres, le biais pour la puissance est trop important et ne rentre pas dans un uint16_t...
       this->write_(CSE7761_SPECIAL_COMMAND, CSE7761_CMD_ENABLE_WRITE);
 
       uint8_t sys_status = this->read_(CSE7761_REG_SYSSTATUS, 1);
-      if (sys_status & 0x10) {  // Write enable to protected registers (WREN)
-        ESP_LOGD(TAG, "Valeurs de correction avant modification RmsIBOS(0x0F)=0x%04X", this->read_(CSE7761_REG_RMS_IB_OFFSET,2));
-        ESP_LOGD(TAG, "Valeurs de correction avant modification RmsIBOS(0x0F)=0x%04X", this->read_(CSE7761_REG_POWER_PB_OFFSET,2));
-        // 1. Courant : RmsIBOS (0x0F) - 16-bit
-        this->write_(CSE7761_REG_RMS_IB_OFFSET, offset_I_reg);
-        // 2. Puissance : PBOS (0x0B) - 16-bit
-        this->write_(CSE7761_REG_POWER_PB_OFFSET, offset_P_reg);
-        delay(100);
-        
-        ESP_LOGD(TAG, "Valeurs de correction après modification RmsIBOS(0x0F)=0x%04X", this->read_(CSE7761_REG_RMS_IB_OFFSET,2));
-        ESP_LOGD(TAG, "Valeurs de correction après modification RmsIBOS(0x0F)=0x%04X", this->read_(CSE7761_REG_POWER_PB_OFFSET,2));
+      if (sys_status & 0x10) {
+        this->write_(CSE7761_REG_RMS_IB_OFFSET | 0x80, offset_I_reg_B);
+        this->write_(CSE7761_REG_RMS_IA_OFFSET | 0x80, offset_I_reg_A);
+        this->write_(CSE7761_REG_POWER_PB_OFFSET | 0x80, offset_P_reg_B);
+        this->write_(CSE7761_REG_POWER_PA_OFFSET | 0x80, offset_P_reg_A);
         this->write_(CSE7761_SPECIAL_COMMAND, CSE7761_CMD_CLOSE_WRITE);
-        
-        // Marquer la calibration comme effectuée
         this->calibration_done_ = true;
-        ESP_LOGI(TAG, "TEST de correction du Canal B terminé. I2 et P2 devraient être proches de zéro.");
+        ESP_LOGI(TAG, "New calibration done: BIAS_IA=%d BIAS_IB=%d BIAS_PA=%d BIAS_PB=%d",(int16_t) offset_I_reg_A,(int16_t) offset_I_reg_B,(int16_t) offset_P_reg_A,(int16_t) offset_P_reg_B);
       } else {
         ESP_LOGD(TAG, "Write failed at perform_calibration_write_t");
-      }
+      }*/
       
       // Relancer le processus de calibration adaptatif
       this->calibration_count_ = 0;
+      this->sum_current_B_ = 0;
+      this->sum_power_B_ = 0;
     }
-#endif
 
     //***********************************************************************************************
     // Fonction dump_config : ???
@@ -176,11 +145,6 @@ namespace esphome {
     // Fonction get_setup_priority : ???
     //***********************************************************************************************
     float CSE7761Component::get_setup_priority() const { return setup_priority::DATA; }
-    // TODO: vérifier si le changement de priorité est nécessaire ou non pour le service debug
-    // float CSE7761Component::get_setup_priority() const {
-    //   //return setup_priority::DATA;
-    //   return 999.0f;
-    // }
 
     //***********************************************************************************************
     // Fonction update : mise à jour des données de mesure du composant
@@ -358,84 +322,101 @@ namespace esphome {
     void CSE7761Component::get_data_() {
       uint32_t uvalue;
       int32_t svalue;
-#ifdef CALIBRATION_CODE
-      // calibrating
-      if (this->calibration_count_ == 0) {
-        this->sum_current_B_ = 0;
-        this->sum_power_B_ = 0;
-      }
-      // channel B not used for mesurements -> used for calibrating
-      uvalue = this->read_(CSE7761_REG_RMSIB, 3);
-      this->sum_current_B_ += uvalue;
-      svalue = (int32_t)this->read_(CSE7761_REG_POWERPB, 4);
-      this->sum_power_B_ += svalue;
-      this->calibration_count_++;
-      ESP_LOGD(TAG, "CAL_ACCUM: Mesure %u. Sommes I=%" PRIu64 ", P=%" PRId64,
-               this->calibration_count_,
-               this->sum_current_B_,
-               this->sum_power_B_);
-
-      if (this->calibration_count_ >= CALIBRATION_MEASUREMENTS) {
-        this->perform_calibration_write_();
-      }
-#endif
 
       // The effective value of current and voltage Rms is a 24-bit signed number,
-      // the highest bit is 0 for valid data,
+      // the highest bit is 0 for valid data, <-- NO : it is the sign bit on 24 bits for current
       //   and when the highest bit is 1, the reading will be processed as zero
+      //   <-- and NO : it will be value|0xff00000000 to have the corresponding signed int32_t
       // The active power parameter PowerA/B is in two’s complement format, 32-bit
       // data, the highest bit is Sign bit.
+
+
+      float voltage, amps, active_power;
+
       uvalue = this->read_(CSE7761_REG_RMSU, 3);
       this->data_.voltage_rms = (uvalue >= 0x800000) ? 0 : uvalue;
-
-      svalue = this->read_(CSE7761_REG_RMSIA, 3);
-      this->data_.current_rms[0] = ((svalue >= 0x800000) || (svalue < 1600)) ? 0 : svalue;  // No load threshold of 10mA
-      svalue = this->read_(CSE7761_REG_RMSIB, 3);
-      this->data_.current_rms[1] = svalue;  // mesure du bruit
-//      uvalue = this->read_(CSE7761_REG_UFREQ, 2);
-//      ESP_LOGD(TAG, "frequency data %x", uvalue);
-//      this->data_.frequency = (uvalue >= 0x8000) ? 0 : uvalue;
-//      svalue = this->read_(CSE7761_REG_ANGLE, 2);
-//      ESP_LOGD(TAG, "angle data %x", svalue);
-//      this->data_.angle = (svalue >= 0x8000) ? 0 : svalue;
-
-      svalue = this->read_(CSE7761_REG_POWERPA, 4);
-      this->data_.active_power[0] = (0 == this->data_.current_rms[0]) ? 0 : ((int32_t) svalue);
-      svalue = this->read_(CSE7761_REG_POWERPB, 4);
-      this->data_.active_power[1] = (int32_t) svalue; // mesure du bruit
-
-      // convert values and publish to sensors
-
-      float voltage = (float) this->data_.voltage_rms / this->coefficient_by_unit_(RMS_UC);
+      voltage = (float) this->data_.voltage_rms / this->coefficient_by_unit_(RMS_UC);
       if (this->voltage_sensor_ != nullptr) {
         this->voltage_sensor_->publish_state(voltage);
       }
 
+      svalue = this->read_(CSE7761_REG_RMSIA, 3);
+      this->data_.current_rms[0] = (svalue&0x800000)?svalue|0xFF000000:svalue;
+      this->active_current_A_ = (((float) this->data_.current_rms[0]) / this->coefficient_by_unit_(RMS_IAC))/std::numbers::pi+this->software_current_offset_A_;
+      if (this->current_sensor_1_ != nullptr) {
+        this->current_sensor_1_->publish_state(this->active_current_A_);
+      }
+
+      svalue = this->read_(CSE7761_REG_RMSIB, 3);
+      this->data_.current_rms[1] = (svalue&0x800000)?svalue|0xFF000000:svalue;
+      this->active_current_B_ = (((float) this->data_.current_rms[1]) / this->coefficient_by_unit_(RMS_IBC))/std::numbers::pi+this->software_current_offset_B_;
+      if (this->current_sensor_2_ != nullptr) {
+        this->current_sensor_2_->publish_state(this->active_current_B_);
+      }
+      /*      ESP_LOGD(TAG, "Différence des intensités brutes à vide %d", this->data_.current_rms[0]-this->data_.current_rms[1]);
+      ESP_LOGD(TAG, "Rapport des intensités brutes à vide %f", (float) this->data_.current_rms[0] / (float) this->data_.current_rms[1]);
+      std::stringstream ss_bin;
+      uint32_t u32_value = (uint32_t)svalue;
+      for (int j=3; j>=0; j--){
+        uint8_t byte_value = uint8_t ((u32_value >> j*8) & 0xFF);
+        for (int i = 7; i >= 0; --i) {
+          ss_bin << ((byte_value >> i) & 1);
+        }
+        ss_bin << " ";
+      }
+      ESP_LOGD(TAG, "Channel 2 I RAW VALUE: %s", ss_bin.str().c_str());*/
+//      uvalue = this->read_(CSE7761_REG_UFREQ, 2);
+//      this->data_.frequency = (uvalue >= 0x8000) ? 0 : uvalue;
+//      svalue = this->read_(CSE7761_REG_ANGLE, 2);
+//      this->data_.angle = (svalue >= 0x8000) ? 0 : svalue;
+
+      svalue = this->read_(CSE7761_REG_POWERPA, 4);
+      this->data_.active_power[0] = (int32_t) svalue;
+      this->active_power_A_ = (((float) this->data_.active_power[0]) / this->coefficient_by_unit_(POWER_PAC))/std::numbers::pi+this->software_power_offset_A_;
+      if (this->power_sensor_1_ != nullptr) {
+        this->power_sensor_1_->publish_state(this->active_power_A_);
+      }
+
+      svalue = this->read_(CSE7761_REG_POWERPB, 4);
+      this->data_.active_power[1] = (int32_t) svalue; // mesure du bruit
+      this->active_power_B_ = (((float) this->data_.active_power[1]) / this->coefficient_by_unit_(POWER_PBC))/std::numbers::pi+this->software_power_offset_B_;
+      if (this->power_sensor_2_ != nullptr) {
+        this->power_sensor_2_->publish_state(this->active_power_B_);
+      }
+
+/*      ss_bin.str("");
+      u32_value = (uint32_t)svalue;
+      for (int j=3; j>=0; j--){
+        uint8_t byte_value = uint8_t ((u32_value >> j*8) & 0xFF);
+        for (int i = 7; i >= 0; --i) {
+          ss_bin << ((byte_value >> i) & 1);
+        }
+        ss_bin << " ";
+      }
+      ESP_LOGD(TAG, "Channel 2 P RAW VALUE: %s", ss_bin.str().c_str());
+
+
+      ESP_LOGD(TAG, "Différence des puissances brutes à vide %d", this->data_.active_power[0]-this->data_.active_power[1]);
+      ESP_LOGD(TAG, "Rapport des puissances brutes à vide %f", (float) this->data_.active_power[0] / (float) this->data_.active_power[1]);*/
+
 //      float frequency = 3579545/8/((float) this->data_.frequency);
 //      float angle = (float) (frequency-50 < frequency-60) ? (0.0805*(float) this->data_.angle)  : (0.0965*(float) this->data_.angle);
-//      ESP_LOGD(TAG, "frequency %f Hz, angle %f °", frequency, angle);
+      if (this->calibration_enabled_) {
+        // calibrating
+        if (this->calibration_count_ == 0) {
+          this->sum_current_B_ = 0;
+          this->sum_power_B_ = 0;
+        }
+        // channel B not connected -> used for calibrating
+        this->sum_current_B_ += this->active_current_B_;
+        this->sum_power_B_ += this->active_power_B_;
+        this->calibration_count_++;
 
-      for (uint8_t channel = 0; channel < 2; channel++) {
-        // Active power = PowerPA * PowerPAC * 1000 / 0x80000000
-        float active_power = (float) this->data_.active_power[channel] / this->coefficient_by_unit_(POWER_PAC+channel);  // W
-        float amps = (float) this->data_.current_rms[channel] / this->coefficient_by_unit_(RMS_IAC+channel);             // A
-        ESP_LOGD(TAG, "Channel %d power %f W, current %f A", channel + 1, active_power, amps);
-        if (channel == 0) {
-          if (this->power_sensor_1_ != nullptr) {
-            this->power_sensor_1_->publish_state(active_power);
-          }
-          if (this->current_sensor_1_ != nullptr) {
-            this->current_sensor_1_->publish_state(amps);
-          }
-        } else if (channel == 1) {
-          if (this->power_sensor_2_ != nullptr) {
-            this->power_sensor_2_->publish_state(active_power);
-          }
-          if (this->current_sensor_2_ != nullptr) {
-            this->current_sensor_2_->publish_state(amps);
-          }
+        if (this->calibration_count_ >= CALIBRATION_MEASUREMENTS) {
+          this->perform_calibration_write_();
         }
       }
+
     }
 
     //***********************************************************************************************
