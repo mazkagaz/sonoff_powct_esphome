@@ -24,8 +24,6 @@ CONF_CURRENT_1 = "current_1"
 CONF_CURRENT_2 = "current_2"
 CONF_ACTIVE_POWER_1 = "active_power_1"
 CONF_ACTIVE_POWER_2 = "active_power_2"
-
-# ID pour le Text Sensor
 CONF_DEBUG_SENSOR_HEX_ID = "debug_sensor_hex_id"
 CONF_DEBUG_SENSOR_BIN_ID = "debug_sensor_bin_id"
 

@@ -4,7 +4,7 @@
 
 #include <sstream>
 #include <iomanip>
-#include <inttypes.h> // Nécessaire pour les macros PRIu64 et PRId64
+#include <inttypes.h>
 
 namespace esphome {
   namespace cse7761 {
@@ -30,13 +30,14 @@ namespace esphome {
     static const uint8_t CSE7761_REG_EMUCON2 = 0x13;    // (2) Metering control register 2 (0x0001)
     static const uint8_t CSE7761_REG_PULSE1SEL = 0x1D;  // (2) Pin function output select register (0x3210)
 
-    // registres des offsets
-    static const uint8_t CSE7761_REG_POWER_PA_OFFSET = 0x0A; // PowerPAOS (Active Power Offset - 32bit)
-    static const uint8_t CSE7761_REG_POWER_PB_OFFSET = 0x0B; // PowerPAOS (Active Power Offset - 32bit)
-    static const uint8_t CSE7761_REG_RMS_IA_OFFSET = 0x0E; // RmsIAOS (Current RMS Offset - 16bit)
-    static const uint8_t CSE7761_REG_RMS_IB_OFFSET = 0x0F; // RmsIAOS (Current RMS Offset - 16bit)
+    // offsets registers
+    static const uint8_t CSE7761_REG_POWER_PA_OFFSET = 0x0A; // (2) PowerPAOS (Active Power Offset)
+    static const uint8_t CSE7761_REG_POWER_PB_OFFSET = 0x0B; // (2) PowerPAOS (Active Power Offset)
+    static const uint8_t CSE7761_REG_RMS_IA_OFFSET = 0x0E; // (2) RmsIAOS (Current RMS Offset)
+    static const uint8_t CSE7761_REG_RMS_IB_OFFSET = 0x0F; // (2) RmsIAOS (Current RMS Offset)
 
-    // Définir le nombre de mesures de calibration
+    // Calibration constants
+    // TODO: read then from esphome yaml for more adaptability
     static const int CALIBRATION_MEASUREMENTS = 20;
     static const float CALIBRATION_CURRENT_A_B_SCALE_FACTOR = 10.46; // see Doc/CALIBRATION.md
     static const float CALIBRATION_POWER_A_B_SCALE_FACTOR = -8.89; // see Doc/CALIBRATION.md
@@ -61,33 +62,30 @@ namespace esphome {
     enum CSE7761 { RMS_IAC, RMS_IBC, RMS_UC, POWER_PAC, POWER_PBC, POWER_SC, ENERGY_AC, ENERGY_BC };
 
     //***********************************************************************************************
-    // Fonction setup : mise en route du composant
+    // setup: starting routine
     //***********************************************************************************************
     void CSE7761Component::setup() {
-      // reset du cse7761
+      // cse7761 reset
       this->write_(CSE7761_SPECIAL_COMMAND, CSE7761_CMD_RESET);
-      // vérification du reset et initialisation this->chip_init_()
       uint16_t syscon = this->read_(0x00, 2);  // Default 0x0A04
+      // cse7761 init with specific register configuration
       if ((0x0A04 == syscon) && this->chip_init_()) {
-        // composant trouvé et initialisé, arrêt des écritures sur les registres
+        // cse7761 is present and working
         this->write_(CSE7761_SPECIAL_COMMAND, CSE7761_CMD_CLOSE_WRITE);
         ESP_LOGD(TAG, "CSE7761 found");
-        // composant prêt à communiquer
         this->data_.ready = true;
       } else {
-        // composant non trouvé ou erreur d'initialisation
         this->mark_failed();
       }
     }
 
     //***********************************************************************************************
-    // Fonction set_calibration_mode : active/désactive le processus de calibration
+    // set_calibration_mode : start/stop calibration process
     //***********************************************************************************************
     void CSE7761Component::set_calibration_mode(bool state) {
       if (this->calibration_enabled_ != state) {
         this->calibration_enabled_ = state;
         ESP_LOGI(TAG, "Calibration mode %s", state ? "ENABLED" : "DISABLED");
-        // Optionnel : réinitialiser les sommes si la calibration est désactivée
         if (!state) {
           this->calibration_count_ = 0;
           this->sum_current_B_ = 0;
@@ -97,40 +95,44 @@ namespace esphome {
     }
 
     //***********************************************************************************************
-    // Fonction perform_calibration_write_ : vise à calibrer les offset de mesure en utilisant le
-    // bruit mesuré sur le channel B qui est à vide : voir Doc/CALIBRATION.md
+    // perform_calibration_write_ : perform calibration as soon as CALIBRATION_MEASUREMENTS
+    // measurements have been collected
     //***********************************************************************************************
     void CSE7761Component::perform_calibration_write_() {
 
       float calibration_count_F = (float)this->calibration_count_;
+      // sofware calibration unless I find a way to use hardware calibration
       this->software_current_offset_B_ -= this->sum_current_B_ / calibration_count_F;
       this->software_power_offset_B_ -= this->sum_power_B_ / calibration_count_F;
       this->software_current_offset_A_ = CALIBRATION_CURRENT_A_B_SCALE_FACTOR * this->software_current_offset_B_;
       this->software_power_offset_A_ = CALIBRATION_POWER_A_B_SCALE_FACTOR * this->software_power_offset_B_;
-/* IMPOSSIBLE d'utiliser les registres, le biais pour la puissance est trop important et ne rentre pas dans un uint16_t...
-      this->write_(CSE7761_SPECIAL_COMMAND, CSE7761_CMD_ENABLE_WRITE);
-
-      uint8_t sys_status = this->read_(CSE7761_REG_SYSSTATUS, 1);
-      if (sys_status & 0x10) {
-        this->write_(CSE7761_REG_RMS_IB_OFFSET | 0x80, offset_I_reg_B);
-        this->write_(CSE7761_REG_RMS_IA_OFFSET | 0x80, offset_I_reg_A);
-        this->write_(CSE7761_REG_POWER_PB_OFFSET | 0x80, offset_P_reg_B);
-        this->write_(CSE7761_REG_POWER_PA_OFFSET | 0x80, offset_P_reg_A);
-        this->write_(CSE7761_SPECIAL_COMMAND, CSE7761_CMD_CLOSE_WRITE);
-        this->calibration_done_ = true;
-        ESP_LOGI(TAG, "New calibration done: BIAS_IA=%d BIAS_IB=%d BIAS_PA=%d BIAS_PB=%d",(int16_t) offset_I_reg_A,(int16_t) offset_I_reg_B,(int16_t) offset_P_reg_A,(int16_t) offset_P_reg_B);
-      } else {
-        ESP_LOGD(TAG, "Write failed at perform_calibration_write_t");
-      }*/
+      /* // offsets registers  : works fine with channel B but channel A bias is to large on Sonoff POWCT
+      * // (> max uint16_t data) and can't be corrected with the cse7761 offset registers. Or I did not find
+      * // the way at this moment.
+      * this->write_(CSE7761_SPECIAL_COMMAND, CSE7761_CMD_ENABLE_WRITE);
+      *
+      *       uint8_t sys_status = this->read_(CSE7761_REG_SYSSTATUS, 1);
+      *       if (sys_status & 0x10) {
+      *         this->write_(CSE7761_REG_RMS_IB_OFFSET | 0x80, offset_I_reg_B);
+      *         this->write_(CSE7761_REG_RMS_IA_OFFSET | 0x80, offset_I_reg_A);
+      *         this->write_(CSE7761_REG_POWER_PB_OFFSET | 0x80, offset_P_reg_B);
+      *         this->write_(CSE7761_REG_POWER_PA_OFFSET | 0x80, offset_P_reg_A);
+      *         this->write_(CSE7761_SPECIAL_COMMAND, CSE7761_CMD_CLOSE_WRITE);
+      *         this->calibration_done_ = true;
+      *         ESP_LOGI(TAG, "New calibration done: BIAS_IA=%d BIAS_IB=%d BIAS_PA=%d BIAS_PB=%d",(int16_t) offset_I_reg_A,(int16_t) offset_I_reg_B,(int16_t) offset_P_reg_A,(int16_t) offset_P_reg_B);
+      *       } else {
+      *         ESP_LOGD(TAG, "Write failed at perform_calibration_write_t");
+      *       }*/
       
-      // Relancer le processus de calibration adaptatif
+      // Restart a new calibration cycle: to prevent time shift or external conditions dependences
+      // (as temperature, humidity...etc...)
       this->calibration_count_ = 0;
       this->sum_current_B_ = 0;
       this->sum_power_B_ = 0;
     }
 
     //***********************************************************************************************
-    // Fonction dump_config : ???
+    // dump_config
     //***********************************************************************************************
     void CSE7761Component::dump_config() {
       ESP_LOGCONFIG(TAG, "CSE7761:");
@@ -142,21 +144,21 @@ namespace esphome {
     }
 
     //***********************************************************************************************
-    // Fonction get_setup_priority : ???
+    // get_setup_priority
     //***********************************************************************************************
     float CSE7761Component::get_setup_priority() const { return setup_priority::DATA; }
 
     //***********************************************************************************************
-    // Fonction update : mise à jour des données de mesure du composant
+    // update : measurements update
     //***********************************************************************************************
     void CSE7761Component::update() {
       if (this->data_.ready) {this->get_data_();}
     }
 
     //***********************************************************************************************
-    // Fonction write_ : écriture de data dans le registre reg
-    // - uint8_t reg : adresse du registre
-    // - uint16_t data : donnée à écrire
+    // write_ : write data "data" to rgister "reg"
+    // - uint8_t reg : register address
+    // - uint16_t data : data to write
     //***********************************************************************************************
     void CSE7761Component::write_(uint8_t reg, uint16_t data) {
       uint8_t buffer[5];
@@ -185,10 +187,12 @@ namespace esphome {
     }
 
     //***********************************************************************************************
-    // Fonction read_once_ : lecture de value de taille size dans le registre reg
-    // - uint8_t reg : adresse du registre à lire
-    // - uint8_t size : taille du registre à lire
-    // - uint32_t *value : pointeur vers la valeur lue
+    // read_once_ : try one register read
+    // - uint8_t reg : register address
+    // - uint8_t size : register size
+    // - uint32_t *value : pointer to read data returned
+    // TODO: add an enum with register sizes to simplify this function and all reading and writing
+    //       functions.
     //***********************************************************************************************
     bool CSE7761Component::read_once_(uint8_t reg, uint8_t size, uint32_t *value) {
       while (this->available()) {
@@ -230,8 +234,12 @@ namespace esphome {
     }
 
     //***********************************************************************************************
-    // Fonction read_ : lecture de value de taille size dans le registre reg
-    // Appelle read_once_ au plus 3 fois jusqu'à ce que la lecture soit correcte'
+    // read_ : read register data by trying 3 times max to call read_once_
+    // - uint8_t reg : register address
+    // - uint8_t size : register size
+    // return uint32_t value : data read in register
+    // TODO: add an enum with register sizes to simplify this function and all reading and writing
+    //       functions.
     //***********************************************************************************************
     uint32_t CSE7761Component::read_(uint8_t reg, uint8_t size) {
       bool result = false;  // Start loop
@@ -247,8 +255,8 @@ namespace esphome {
     }
 
     //***********************************************************************************************
-    // Fonction coefficient_by_unit_ : retour le coefficient pour convertir la donnée brute
-    // - uint32_t unit : type de donnée à convertir
+    // coefficient_by_unit_ : coef to convert row measurements
+    // - uint32_t unit : index of measurements, see enum CSE7761
     //***********************************************************************************************
     uint32_t CSE7761Component::coefficient_by_unit_(uint32_t unit) {
       switch (unit) {
@@ -262,7 +270,7 @@ namespace esphome {
           return 0x80000000 / this->data_.coefficient[POWER_PAC];
         case POWER_PBC:
           return 0x80000000 / this->data_.coefficient[POWER_PBC];
-          // TODO: vérifier les calculs des coefs suivants dans la doc
+          // TODO: to verify the folowing formulas are OK with CSE7761 datasheet
         case POWER_SC:
           return 0x80000000 / this->data_.coefficient[POWER_SC];
         case ENERGY_AC:
@@ -274,11 +282,13 @@ namespace esphome {
     }
 
     //***********************************************************************************************
-    // Fonstion chip_init_ : initialisation de la puce
+    // chip_init_ : init all the sys_status registers of the chip to make
+    // return TRUE if OK, else return FALSE
+    // TODO: link the configuration choices with external trigers and be able to change then at any
+    //       time
     //***********************************************************************************************
     bool CSE7761Component::chip_init_() {
       uint16_t calc_chksum = 0xFFFF;
-      // lecture et stockage des 8 coefs de conversion IAC IBC UC PAC PBC PSC EAC EBC
       for (uint32_t i = 0; i < 8; i++) {
         // les adresses des 8 registres se suivent -> adressse du premier + i
         this->data_.coefficient[i] = this->read_(CSE7761_REG_RMSIAC + i, 2);
@@ -298,13 +308,13 @@ namespace esphome {
       uint8_t sys_status = this->read_(CSE7761_REG_SYSSTATUS, 1);
       if (sys_status & 0x10) {  // Write enable to protected registers (WREN)
         this->write_(CSE7761_REG_SYSCON | 0x80, 0xFF04);
-        // ancienne valeur : puissance non signée, pas de frequence
+        // old values: unsigned power, no frequency
         //this->write_(CSE7761_REG_EMUCON | 0x80, 0x1183);
         //this->write_(CSE7761_REG_EMUCON2 | 0x80, 0x0FC1);
-        // puissance signée, pas de frequence
+        // signed power, no frequency
         this->write_(CSE7761_REG_EMUCON | 0x80, 0x1583);
         this->write_(CSE7761_REG_EMUCON2 | 0x80, 0x0FC1);
-        // puissance signée + fréquence (ne fonctionne que si le signal de tension est "propre")
+        // signed power + frequency (does not work, tension signal must be too durty)
         //this->write_(CSE7761_REG_EMUCON | 0x80, 0x1D83);
         //this->write_(CSE7761_REG_EMUCON2 | 0x80, 0x8FC1);
 
@@ -317,7 +327,9 @@ namespace esphome {
     }
 
     //***********************************************************************************************
-    // Fonstion get_data_ : lecture des mesures
+    // get_data_ : get measurements from chip and convert them to USI units
+    // TODO: get datas according to chip configuration and user choices (ex only channel A, frequency)
+    //       to reduce unnecessaries register reads
     //***********************************************************************************************
     void CSE7761Component::get_data_() {
       uint32_t uvalue;
@@ -330,12 +342,11 @@ namespace esphome {
       // The active power parameter PowerA/B is in two’s complement format, 32-bit
       // data, the highest bit is Sign bit.
 
-
-      float voltage, amps, active_power;
-
+      // TODO: add a new class member this->voltage, open the sonoff, connect it to serial
+      // without ac power and measure the noise to calibrate the tension
       uvalue = this->read_(CSE7761_REG_RMSU, 3);
       this->data_.voltage_rms = (uvalue >= 0x800000) ? 0 : uvalue;
-      voltage = (float) this->data_.voltage_rms / this->coefficient_by_unit_(RMS_UC);
+      float voltage = (float) this->data_.voltage_rms / this->coefficient_by_unit_(RMS_UC);
       if (this->voltage_sensor_ != nullptr) {
         this->voltage_sensor_->publish_state(voltage);
       }
@@ -353,22 +364,26 @@ namespace esphome {
       if (this->current_sensor_2_ != nullptr) {
         this->current_sensor_2_->publish_state(this->active_current_B_);
       }
-      /*      ESP_LOGD(TAG, "Différence des intensités brutes à vide %d", this->data_.current_rms[0]-this->data_.current_rms[1]);
-      ESP_LOGD(TAG, "Rapport des intensités brutes à vide %f", (float) this->data_.current_rms[0] / (float) this->data_.current_rms[1]);
-      std::stringstream ss_bin;
-      uint32_t u32_value = (uint32_t)svalue;
-      for (int j=3; j>=0; j--){
-        uint8_t byte_value = uint8_t ((u32_value >> j*8) & 0xFF);
-        for (int i = 7; i >= 0; --i) {
-          ss_bin << ((byte_value >> i) & 1);
-        }
-        ss_bin << " ";
-      }
-      ESP_LOGD(TAG, "Channel 2 I RAW VALUE: %s", ss_bin.str().c_str());*/
+/* TODO: make a debug function to print bytes in hex or binary
+ *      ESP_LOGD(TAG, "Différence des intensités brutes à vide %d", this->data_.current_rms[0]-this->data_.current_rms[1]);
+ *       ESP_LOGD(TAG, "Rapport des intensités brutes à vide %f", (float) this->data_.current_rms[0] / (float) this->data_.current_rms[1]);
+ *       std::stringstream ss_bin;
+ *       uint32_t u32_value = (uint32_t)svalue;
+ *       for (int j=3; j>=0; j--){
+ *         uint8_t byte_value = uint8_t ((u32_value >> j*8) & 0xFF);
+ *         for (int i = 7; i >= 0; --i) {
+ *           ss_bin << ((byte_value >> i) & 1);
+ *         }
+ *         ss_bin << " ";
+ *       }
+ *       ESP_LOGD(TAG, "Channel 2 I RAW VALUE: %s", ss_bin.str().c_str());*/
+
 //      uvalue = this->read_(CSE7761_REG_UFREQ, 2);
 //      this->data_.frequency = (uvalue >= 0x8000) ? 0 : uvalue;
 //      svalue = this->read_(CSE7761_REG_ANGLE, 2);
 //      this->data_.angle = (svalue >= 0x8000) ? 0 : svalue;
+//      float frequency = 3579545/8/((float) this->data_.frequency);
+//      float angle = (float) (frequency-50 < frequency-60) ? (0.0805*(float) this->data_.angle)  : (0.0965*(float) this->data_.angle);
 
       svalue = this->read_(CSE7761_REG_POWERPA, 4);
       this->data_.active_power[0] = (int32_t) svalue;
@@ -384,30 +399,30 @@ namespace esphome {
         this->power_sensor_2_->publish_state(this->active_power_B_);
       }
 
-/*      ss_bin.str("");
-      u32_value = (uint32_t)svalue;
-      for (int j=3; j>=0; j--){
-        uint8_t byte_value = uint8_t ((u32_value >> j*8) & 0xFF);
-        for (int i = 7; i >= 0; --i) {
-          ss_bin << ((byte_value >> i) & 1);
-        }
-        ss_bin << " ";
-      }
-      ESP_LOGD(TAG, "Channel 2 P RAW VALUE: %s", ss_bin.str().c_str());
+/* TODO: make a debug function to print bytes in hex or binary
+ *       ss_bin.str("");
+ *       u32_value = (uint32_t)svalue;
+ *       for (int j=3; j>=0; j--){
+ *         uint8_t byte_value = uint8_t ((u32_value >> j*8) & 0xFF);
+ *         for (int i = 7; i >= 0; --i) {
+ *           ss_bin << ((byte_value >> i) & 1);
+ *         }
+ *         ss_bin << " ";
+ *       }
+ *       ESP_LOGD(TAG, "Channel 2 P RAW VALUE: %s", ss_bin.str().c_str());
+ */
+/* TODO: make a function to collect datas and calculate new personnal coef values
+ *       // logs to make calibration study
+ *       ESP_LOGD(TAG, "Différence des puissances brutes à vide %d", this->data_.active_power[0]-this->data_.active_power[1]);
+ *       ESP_LOGD(TAG, "Rapport des puissances brutes à vide %f", (float) this->data_.active_power[0] / (float) this->data_.active_power[1]);*/
 
-
-      ESP_LOGD(TAG, "Différence des puissances brutes à vide %d", this->data_.active_power[0]-this->data_.active_power[1]);
-      ESP_LOGD(TAG, "Rapport des puissances brutes à vide %f", (float) this->data_.active_power[0] / (float) this->data_.active_power[1]);*/
-
-//      float frequency = 3579545/8/((float) this->data_.frequency);
-//      float angle = (float) (frequency-50 < frequency-60) ? (0.0805*(float) this->data_.angle)  : (0.0965*(float) this->data_.angle);
       if (this->calibration_enabled_) {
         // calibrating
         if (this->calibration_count_ == 0) {
           this->sum_current_B_ = 0;
           this->sum_power_B_ = 0;
         }
-        // channel B not connected -> used for calibrating
+        // channel B always idle -> used for calibration
         this->sum_current_B_ += this->active_current_B_;
         this->sum_power_B_ += this->active_power_B_;
         this->calibration_count_++;
@@ -420,9 +435,12 @@ namespace esphome {
     }
 
     //***********************************************************************************************
-    // Fonstion read_register_service : fonction de débogage avancée permettant de lire des
-    // registres directement depuis homeassistant sans avoir besoin de rajouter des print
-    // et de recompiler
+    // read_register_service : advanced debug function to read registers and push datas in
+    // home assistant entities. Make debug easier without recompile the code several times.
+    // - std::string register_number_str: register number come as a string from home assistant
+    // - int size : register size
+    // TODO: add an enum with register sizes to simplify this function and all reading and writing
+    //       functions.
     //***********************************************************************************************
     void CSE7761Component::read_register_service(std::string register_number_str, int size) {
       // Optionnel : Loguer l'appel
@@ -449,10 +467,10 @@ namespace esphome {
 
       std::stringstream ss_hex,ss_bin;
       for (uint8_t byte_value : raw_data){
-        // en hexa
+        // hex
         ss_hex << std::uppercase << std::hex << std::setw(2) << std::setfill('0')
         << (int)byte_value << " ";
-        // en binaire
+        // bin
         for (int i = 7; i >= 0; --i) {
           ss_bin << ((byte_value >> i) & 1);
         }
@@ -471,7 +489,9 @@ namespace esphome {
     }
 
     //***********************************************************************************************
-    // Fonstion read_register : réimplémentation de la lecture des registres à ma sauce
+    // read_register : yet another read register function espacialy used to debug
+    // TODO: add an enum with register sizes to simplify this function and all reading and writing
+    //       functions.
     //***********************************************************************************************
     std::vector<uint8_t> CSE7761Component::read_register(int register_number, int size) {
 
@@ -535,8 +555,11 @@ namespace esphome {
     }
     
     //***********************************************************************************************
-    // Fonstion write_register_service : fonction de débogage avancée permettant d'écrire dans des
-    // registres directement depuis homeassistant
+    // write_register_service : home assistant service to write data to register
+    // - std::string register_number_str
+    // - std::string value_str
+    // TODO: add an enum with register sizes to simplify this function and all reading and writing
+    //       functions.
     //***********************************************************************************************
     void CSE7761Component::write_register_service(std::string register_number_str, std::string value_str) {
       ESP_LOGD(TAG, "Service appelé: Écriture du registre %s avec la valeur %s.", register_number_str, value_str);

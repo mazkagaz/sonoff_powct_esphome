@@ -50,13 +50,14 @@ namespace esphome {
       sensor::Sensor *current_sensor_1_{nullptr};
       sensor::Sensor *power_sensor_2_{nullptr};
       sensor::Sensor *current_sensor_2_{nullptr};
+      text_sensor::TextSensor *debug_sensor_hex_{nullptr};
+      text_sensor::TextSensor *debug_sensor_bin_{nullptr};
       CSE7761DataStruct data_;
-      // Variables d'état pour la calibration
+      // calibration
       bool calibration_enabled_{false};
-      //bool calibration_done_{false};
       uint8_t calibration_count_{0};
-      double sum_current_B_{0}; // Somme brute des valeurs de Courant B
-      double sum_power_B_{0};    // Somme brute des valeurs de Puissance B
+      double sum_current_B_{0};
+      double sum_power_B_{0};
       double active_current_A_{0};
       double active_current_B_{0};
       double active_power_A_{0};
@@ -72,14 +73,7 @@ namespace esphome {
       uint32_t coefficient_by_unit_(uint32_t unit);
       bool chip_init_();
       void get_data_();
-      // Capteurs pour afficher le résultat
-      text_sensor::TextSensor *debug_sensor_hex_{nullptr};
-      text_sensor::TextSensor *debug_sensor_bin_{nullptr};
-
-      // Méthode lecture registre
       std::vector<uint8_t> read_register(int reg, int size);
-
-      // calibration des offsets
       void perform_calibration_write_();
     };
 
