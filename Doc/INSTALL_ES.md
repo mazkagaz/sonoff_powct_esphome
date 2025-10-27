@@ -13,7 +13,7 @@ Primero, debe **abrir la carcasa del dispositivo** mientras está **APAGADO** (d
 Dentro del dispositivo, debe **soldar cuatro cables conectores** a los puntos de programación claramente marcados en la placa: **3.3V, TX, RX y GND**. Estas son las conexiones estándar requeridas para flashear dispositivos basados en ESP.
 
 **_Ejemplo de puntos de soldadura en la placa Sonoff POW CT:_**
-![Pinout Sonoff POW CT](https://raw.githubusercontent.com/mazkagaz/sonoff_powct_esphome/Images/PCB.jpg)
+![Pinout Sonoff POW CT](https://github.com/mazkagaz/sonoff_powct_esphome/blob/main/Images/PCB.jpg)
 
 | Pin | Función |
 | :--- | :--- |
