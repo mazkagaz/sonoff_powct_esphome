@@ -13,7 +13,7 @@ from esphome.const import (
     UNIT_WATT,
 )
 
-CODEOWNERS = ["@berfenger"]
+CODEOWNERS = ["@berfenger", "@mazkagaz"]
 DEPENDENCIES = ["uart", "api"]
 
 cse7761_ns = cg.esphome_ns.namespace("cse7761")
@@ -94,7 +94,6 @@ async def to_code(config):
         conf = config[key]
         sens = await sensor.new_sensor(conf)
         cg.add(getattr(var, f"set_{key}_sensor")(sens))
-    # Si le text_sensor est configuré, appelez le setter C++
     if debug_sensor_hex_config := config.get(CONF_DEBUG_SENSOR_HEX_ID):
         debug_sensor_hex = await cg.get_variable(debug_sensor_hex_config)
         cg.add(var.set_debug_text_sensor_hex(debug_sensor_hex))
