@@ -45,6 +45,7 @@ Pour commencer l'installation et la configuration de mon appareil, veuillez cons
 | :--- | :--- | :--- |
 | **Guide d'Installation** | Procédure complète pour flasher et démarrer mon appareil. | **[Doc/INSTALL.md](Doc/INSTALL\_FR.md)** |
 | **Guide de Calibrage** | Instructions pour effectuer un calibrage précis de mes mesures. | **[Doc/CALIBRATION.md](Doc/CALIBRATION\_FR.md)** |
+| **Guide de Debug des registres** | Une image vaut mieux qu'un long discourt... | **[Doc/DEBUG.md](Doc/DEBUG.md)** |
 | **Détails de Configuration** | Explications détaillées sur les options spécifiques au Sonoff POW CT et l'utilisation des **fonctions de debug** avancées. | **[Doc/SONOFF\_POWCT\_CONFIG.md](Doc/SONOFF\_POWCT\_CONFIG.md)** |
 | **Datasheet** | Manuel technique du circuit de mesure d'énergie **CSE7761**. | **[Doc/CSE7761UserManual\_1672133056.pdf](Doc/CSE7761UserManual\_1672133056.pdf)** |
 

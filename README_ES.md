@@ -45,6 +45,7 @@ Para comenzar la instalación y configuración de mi dispositivo, consulte las g
 | :--- | :--- | :--- |
 | **Guía de Instalación** | Procedimiento completo para flashear e iniciar mi dispositivo. | **[Doc/INSTALL.md](Doc/INSTALL\_ES.md)** |
 | **Guía de Calibración** | Instrucciones para realizar una calibración precisa de mis mediciones. | **[Doc/CALIBRATION.md](Doc/CALIBRATION\_ES.md)** |
+| **Guía de Depuración de Registros** | Una imagen vale más que mil palabras... | **[Doc/DEBUG.md](Doc/DEBUG.md)** |
 | **Detalles de Configuración** | Explicaciones detalladas sobre las opciones específicas del Sonoff POW CT y el uso de las funciones de **depuración** avanzadas. | **[Doc/SONOFF\_POWCT\_CONFIG.md](Doc/SONOFF\_POWCT\_CONFIG.md)** |
 | **Hoja de Datos** | Manual técnico del circuito de medición de energía **CSE7761**. | **[Doc/CSE7761UserManual\_1672133056.pdf](Doc/CSE7761UserManual\_1672133056.pdf)** |
 
