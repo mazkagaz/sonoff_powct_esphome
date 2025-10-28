@@ -423,7 +423,7 @@ namespace esphome {
           }
         }
         else{ //mean_power <= 0.0f
-          this->accumulated_energy_exported_ += (mean_power * time_delta_s) / 3600.0f;
+          this->accumulated_energy_exported_ -= (mean_power * time_delta_s) / 3600.0f;
           if (this->energy_exported_ != nullptr) {
             this->energy_exported_->publish_state(this->accumulated_energy_exported_ / 1000.0f); // Publish in kWh
           }
