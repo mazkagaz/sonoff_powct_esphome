@@ -132,20 +132,6 @@ sensor:
       accuracy_decimals: 3
       state_class: total_increasing
 
-  # keeped for compare with new software energy meter
-  - platform: total_daily_energy
-    name: Total Daily Energy
-    power_id: w_sensor
-    id: kw_sensor
-    unit_of_measurement: 'kWh'
-    state_class: total_increasing
-    device_class: energy
-    accuracy_decimals: 3
-    icon: mdi:lightning-bolt
-    filters:
-      # Multiplication factor from W to kW is 0.001
-      - multiply: 0.001
-
   - platform: internal_temperature
     name: ESP32 Internal Temp
     id: esp32_temp
