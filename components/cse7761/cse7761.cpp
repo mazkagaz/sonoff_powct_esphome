@@ -402,6 +402,7 @@ namespace esphome {
       svalue = this->read_(CSE7761_REG_POWERPA, 4);
       this->data_.active_power[0] = (int32_t) svalue;
       this->active_power_A_ = (((float) this->data_.active_power[0]) / this->coefficient_by_unit_(POWER_PAC))/std::numbers::pi+this->software_power_offset_A_;
+      ESP_LOGD(TAG, "Puissance: %f", this->active_power_A_);
       if (this->power_sensor_1_ != nullptr) {
         this->power_sensor_1_->publish_state(this->active_power_A_);
       }
@@ -416,18 +417,22 @@ namespace esphome {
         double mean_power = (this->last_active_power_A_ + this->active_power_A_) / 2.0f;
         this->last_active_power_A_ = this->active_power_A_;
         // Energy = Power (W) * Delta Time (s) / 3600 (s/h) = Wh
+        double delta_E = (mean_power * time_delta_s) / 3600.0f;
         if (mean_power > 0.0f){
-          this->accumulated_energy_received_ += (mean_power * time_delta_s) / 3600.0f;
+          this->accumulated_energy_received_ += delta_E;
           if (this->energy_received_ != nullptr) {
             this->energy_received_->publish_state(this->accumulated_energy_received_ / 1000.0f); // Publish in kWh
           }
         }
         else{ //mean_power <= 0.0f
-          this->accumulated_energy_exported_ -= (mean_power * time_delta_s) / 3600.0f;
+          this->accumulated_energy_exported_ -= delta_E;
           if (this->energy_exported_ != nullptr) {
             this->energy_exported_->publish_state(this->accumulated_energy_exported_ / 1000.0f); // Publish in kWh
           }
         }
+        ESP_LOGD(TAG, "dt = %f ; P_moy = %f ; dE = %f",time_delta_s, mean_power, delta_E);
+        ESP_LOGD(TAG, "dE_r = %f ; dE_e = %f", this->energy_received_, this->energy_exported_);
+        ESP_LOGD(TAG, "Total E_r = %f ; Total E_e = %f", this->accumulated_energy_received_, this->accumulated_energy_exported_);
       }
 
 
