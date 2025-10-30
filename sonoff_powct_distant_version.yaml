@@ -61,7 +61,7 @@ time:
     id: homeassistant_time
 
 external_components:
-  - source: github://mazkagaz/sonoff_powct_esphome@main
+  - source: github://mazkagaz/sonoff_powct_esphome
     components: [cse7761] # components to be taken remotely
 
 uart:
