@@ -477,8 +477,8 @@ namespace esphome {
       }
 
 
-      // save every 12 hours
-      if (this->last_save_time_ == 0 || (esphome::millis() - this->last_save_time_) >= 3600000*12) {
+      // save every hour
+      if (this->last_save_time_ == 0 || (esphome::millis() - this->last_save_time_) >= 3600000) {
         this->last_save_time_ = esphome::millis();
 
         // Utilisation de la structure pour la sauvegarde
