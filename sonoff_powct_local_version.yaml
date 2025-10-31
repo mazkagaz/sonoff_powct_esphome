@@ -191,7 +191,7 @@ display:
     } else {  
       it.display_voltage(false);
       it.display_kwh(true);
-      it.printf(0, "%.1f", id(kw_sensor).state);
+      it.printf(0, "%.1f", id(E_received).state);
       it.printf(1, "%.1f", id(w_sensor).state);
     }
 
