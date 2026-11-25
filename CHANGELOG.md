@@ -44,6 +44,8 @@ All notable changes to this project are documented here. The format follows
 - Energy timing now uses unsigned millisecond arithmetic, avoiding the
   `millis()` wrap issue.
 - A zero conversion coefficient is rejected instead of dividing by zero.
+- doctest is vendored in the repository so host tests work with CMake 4 and
+  without network access during configure.
 
 ### Removed
 

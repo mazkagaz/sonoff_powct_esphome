@@ -17,7 +17,7 @@ which environment was validated.
 | GCC | 14.2.0 | Host tests, C++17 |
 | GNU Make | 4.4.1 | CMake generator |
 | Git | 2.47.3 | Repository and external components |
-| doctest | 2.4.11 | Pinned in `tests/host/CMakeLists.txt` |
+| doctest | 2.4.11 | Vendored in `tests/host/third_party/doctest/` with its license |
 | esptool | 5.6.0 | Bundled with ESPHome; flashing and diagnostics |
 | espefuse | 5.6.0 | Bundled with ESPHome; read-only diagnostics |
 

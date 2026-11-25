@@ -26,7 +26,7 @@
 - ESPHome: 2026.11.1 pinned in `requirements-dev.txt`; ESP-IDF 5.5.6 selected by
   ESPHome (no manual YAML pin). Current stable is checked separately when
   available.
-- Network: required on the first CMake configure (doctest FetchContent) and for
+- Network: not required for the host tests (doctest is vendored); required for
   ESPHome component/toolchain downloads.
 - Hardware: standard POW CT; optional Ring 100 A only as an exploratory variant.
 - Secrets in CI: generated dummy `secrets.yaml`; never real credentials.

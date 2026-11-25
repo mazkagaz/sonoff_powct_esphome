@@ -5,14 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-include(FetchContent)
-FetchContent_Declare(
-    doctest
-    GIT_REPOSITORY https://github.com/doctest/doctest.git
-    GIT_TAG v2.4.11
-)
-FetchContent_MakeAvailable(doctest)
-
 add_executable(host_tests
     test_smoke.cpp
     test_protocol.cpp
@@ -20,8 +12,10 @@ add_executable(host_tests
     test_calibration.cpp
     test_energy.cpp
 )
-target_link_libraries(host_tests PRIVATE doctest::doctest)
-target_include_directories(host_tests PRIVATE ../../components/cse7761)
+target_include_directories(host_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../components/cse7761
+)
 target_compile_options(host_tests PRIVATE -Wall -Wextra -Wpedantic)
 
 enable_testing()

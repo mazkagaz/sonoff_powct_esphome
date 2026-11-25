@@ -67,9 +67,9 @@ sudo apt-get update
 sudo apt-get install -y build-essential cmake git python3 python3-venv python3-pip
 ```
 
-The first CMake configure downloads doctest with `FetchContent`; ESPHome also
-downloads components and toolchains when needed. Network access is required for
-those first runs.
+The host tests use the vendored doctest header; no network access is needed for
+CMake configure. ESPHome downloads components and toolchains when needed, so
+network access is required for those first runs.
 
 ## Local toolchain
 
@@ -91,8 +91,8 @@ running `esphome config`.
 
 When upgrading ESPHome, ESP-IDF, Python, CMake, the compiler or doctest:
 
-1. update `requirements-dev.txt` and/or the doctest pin in
-   `tests/host/CMakeLists.txt`;
+1. update `requirements-dev.txt` and, for doctest, the vendored header and
+   license in `tests/host/third_party/doctest/`;
 2. update [Doc/VERSIONS.md](Doc/VERSIONS.md) and the validated-environment note
    in [Doc/INSTALL.md](Doc/INSTALL.md) / [Doc/INSTALL_FR.md](Doc/INSTALL_FR.md);
 3. run the host tests, `esphome config` on both YAML files and a real compile;

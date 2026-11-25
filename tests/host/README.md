@@ -1,7 +1,8 @@
 # Host tests
 
-The host suite uses **doctest** and CMake/CTest. It runs on a Linux host and
-does not need ESPHome or an ESP32.
+The host suite uses **doctest** (vendored in `third_party/doctest/`) and
+CMake/CTest. It runs on a Linux host and does not need ESPHome, network access or
+an ESP32.
 
 ```bash
 cmake -S tests/host -B build/host

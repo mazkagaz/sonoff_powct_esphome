@@ -13,7 +13,8 @@ conversion, calibration, filtering and energy logic. The tests run on a host
 
 Use **doctest** as the host test framework.
 
-- Header-only and easy to vendor or fetch with CMake.
+- Header-only and vendored in `tests/host/third_party/doctest/`.
+- No network dependency during CMake configure.
 - Fast compile time and small footprint.
 - `TEST_CASE`, `CHECK`, `REQUIRE` and `SUBCASE` cover the expected needs.
 - CTest integration is straightforward.
@@ -23,4 +24,7 @@ Use **doctest** as the host test framework.
 - The test suite is lightweight and fast in CI.
 - Advanced matchers and generators from Catch2 are not available; if the suite
   grows to need them, migration is possible but not free.
-- The framework version is pinned in `tests/host/CMakeLists.txt`.
+- The framework version is pinned by the vendored header and license
+  (`doctest` 2.4.11); update both files together.
+- Vendoring avoids the old doctest `CMakeLists.txt`, which is rejected by CMake 4
+  on some CI runners.
