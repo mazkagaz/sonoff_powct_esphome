@@ -22,6 +22,20 @@
 5. Run the checks locally.
 6. Open a PR using the template; wait for CI and review.
 
+## Required CI checks
+
+Protect `main` and require these checks before merge:
+
+- `docs` — relative Markdown links;
+- `host-tests` — doctest suite;
+- `changelog` — fragment required when code/configuration changes;
+- `esphome-config` — both YAML files validate with dummy secrets;
+- `secret-scan` — gitleaks finds no credentials.
+
+`esphome-compile` runs on `main` and manual dispatches because it downloads the
+ESP-IDF toolchain; it is the heavier build gate. Branch protection is a GitHub
+repository setting, not a file in this repository.
+
 ## Definition of Done
 
 A PR is done only when:

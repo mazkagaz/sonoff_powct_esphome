@@ -21,6 +21,8 @@ All notable changes to this project are documented here. The format follows
 - Host-testable `cse7761_core_*` headers for protocol, conversion, calibration
   and energy, with 21 doctest cases.
 - Pull request template and CI workflow for documentation links and host tests.
+- CI jobs for ESPHome config validation, main/manual compile, changelog fragment
+  enforcement and gitleaks secret scanning.
 
 ### Changed
 

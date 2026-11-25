@@ -1,0 +1,11 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Generated build artifacts, vendored test code and documented placeholders."
+paths = [
+  '''^\.esphome/''',
+  '''^build/''',
+  '''^tests/host/third_party/''',
+  '''^secrets\.yaml\.example$''',
+]

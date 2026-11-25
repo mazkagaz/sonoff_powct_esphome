@@ -84,13 +84,18 @@ must come with an explanation.
 Required jobs:
 
 - `docs`: relative Markdown links.
-- `host-tests`: configure, build and run doctest suite.
-- `esphome-config`: `esphome config` on both YAML examples with dummy secrets.
-- `esphome-compile`: pinned and current stable ESPHome.
-- `security`: secret scanning.
+- `host-tests`: configure, build and run the vendored doctest suite.
+- `changelog`: on pull requests, require a `changelog.d/` fragment when code or
+  configuration changes.
+- `esphome-config`: `esphome config` on both YAML examples with dummy secrets on
+  every push and pull request.
+- `esphome-compile`: real ESPHome compile on `main` pushes and manual runs, with
+  a cache for the ESPHome/ESP-IDF toolchain.
+- `secret-scan`: gitleaks scan for committed credentials.
 
-The workflow starts with `docs` and `host-tests`; ESPHome jobs are added in
-Phase 3.
+Branch protection should require `docs`, `host-tests`, `changelog`,
+`esphome-config` and `secret-scan`. `esphome-compile` is the heavier main/manual
+gate and is not required on every PR.
 
 ## 9. Coverage and quality gates
 
