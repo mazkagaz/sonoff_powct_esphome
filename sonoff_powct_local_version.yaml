@@ -1,6 +1,13 @@
+substitutions:
+  device_name: "my-sonoff-powct"
+  friendly_name: "My Sonoff POWCT"
+  # Local development: copy components/cse7761 to my_components/cse7761.
+  # Remote example: use github://mazkagaz/sonoff_powct_esphome instead.
+  component_source: "my_components"
+
 esphome:
-  name: my-sonoff-powct
-  friendly_name: my Sonoff POWCT
+  name: ${device_name}
+  friendly_name: ${friendly_name}
 
 esp32:
   board: nodemcu-32s
@@ -16,38 +23,40 @@ logger:
 
 api:
   encryption:
-    key: ">>>>>>>>PUT HERE YOUR OWN KEY<<<<<<<<<<<"
+    key: !secret api_encryption_key
   reboot_timeout: 5min
   homeassistant_services: True
-  services:
-    - service: read_register
+  actions:
+    - action: read_register
       variables:
         register_number: string
         size: int
       then:
         - lambda: |-
             id(cse7761_comp).read_register_service(register_number, size);
-    - service: write_register
+    - action: write_register
       variables:
         register_number: string
-        regiter_value: string
+        register_value: string
       then:
         - lambda: |-
-            id(cse7761_comp).write_register_service(register_number, regiter_value);
+            id(cse7761_comp).write_register_service(register_number, register_value);
 
 ota:
   - platform: esphome
-    password: ">>>>>>>>PUT HERE YOUR OWN PASSWORD<<<<<<<<<<<"
+    # Encrypted OTA using api.encryption.key; no separate password needed.
+    encryption:
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
   ap:
-    ssid: ">>>>>>>>PUT HERE YOUR OWN FALLBACK SSID<<<<<<<<<<<"
-    password: ">>>>>>>>PUT HERE YOUR OWN PASSWORD<<<<<<<<<<<"
+    ssid: !secret fallback_ap_ssid
+    password: !secret fallback_ap_password
 
-  #use_address: >>>>>PUT HERE THE IP ADDRESS OF YOUR SONOFF<<<<< #usefull if static IP on another network (like iot specific network).
+  # Optional: set only if the device is on another subnet (static IP).
+  # use_address: 192.168.1.50
 
 web_server:
   ota: false
@@ -62,8 +71,10 @@ time:
     id: homeassistant_time
 
 external_components:
-  - source: my_components # local personnal component directory
-    components: [cse7761] # components to be taken locally
+  # Local example: my_components must contain a copy of components/cse7761.
+  # For the remote version, use sonoff_powct_distant_version.yaml.
+  - source: ${component_source}
+    components: [cse7761]
 
 uart:
   tx_pin: GPIO26
@@ -132,7 +143,7 @@ sensor:
     device_class: power_factor
     id: power_factor
     icon: mdi:angle-acute
-    lambda: return id(w_sensor).state / id(v_sensor).state / id(a_sensor).state;
+    lambda: return id(w_sensor_1).state / id(v_sensor).state / id(a_sensor_1).state;
 
 binary_sensor:
   - platform: gpio
@@ -177,12 +188,12 @@ display:
       it.display_voltage(true);
       it.display_kwh(false);
       it.printf(0, "%.1f", id(v_sensor).state);
-      it.printf(1, "%.1f", id(a_sensor).state);
+      it.printf(1, "%.1f", id(a_sensor_1).state);
     } else {  
       it.display_voltage(false);
       it.display_kwh(true);
       it.printf(0, "%.1f", id(E_received).state);
-      it.printf(1, "%.1f", id(w_sensor).state);
+      it.printf(1, "%.1f", id(w_sensor_1).state);
     }
 
 output:

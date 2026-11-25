@@ -60,6 +60,16 @@ Une fois le matériel connecté, vous pouvez procéder au téléversement du mic
 > offsets, la sauvegarde et la récupération. Ne flashez jamais une app-only à
 > `0x0` ou `0x10000`.
 
+> **Secrets de configuration :** copiez
+> [`secrets.yaml.example`](../secrets.yaml.example) vers `secrets.yaml` et
+> renseignez le Wi-Fi, le point d’accès de secours et la clé d’API. La clé d’API
+> sert aussi à l’OTA chiffrée (`ota: encryption:`) ; aucun mot de passe OTA
+> séparé n’est nécessaire. `secrets.yaml` est ignoré par Git.
+>
+> **Composant local :** le YAML local attend `my_components/cse7761`. Copiez
+> `components/cse7761` dedans, ou utilisez le YAML distant qui récupère le
+> composant depuis GitHub.
+
 🔗 **Tutoriel Vidéo :** Si vous êtes nouveau dans ce processus, ce guide pourrait vous être utile : [Comment Installer ESPHome sur Sonoff Basic et Home Assistant](http://www.youtube.com/watch?v=4Q3whVVVwYw) par Reid Projects.
 
 ***

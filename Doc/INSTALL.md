@@ -59,6 +59,15 @@ Once the hardware is connected, you can proceed with the firmware upload using t
 > [Flashing guide](FLASHING.md): it explains factory vs app-only images, offsets,
 > backups and recovery. Never write an app-only image at `0x0` or `0x10000`.
 
+> **Configuration secrets:** copy [`secrets.yaml.example`](../secrets.yaml.example)
+> to `secrets.yaml` and fill in the Wi-Fi, fallback AP and API encryption key.
+> The API key is also used for encrypted OTA (`ota: encryption:`); no separate
+> OTA password is needed. `secrets.yaml` is ignored by Git.
+>
+> **Local component:** the local YAML expects `my_components/cse7761`. Copy
+> `components/cse7761` there, or use the distant YAML which pulls the component
+> from GitHub.
+
 🔗 **Video Tutorial:** If you are new to this process, you might find this guide helpful: [How to Install ESPHome on Sonoff Basic and Home Assistant](http://www.youtube.com/watch?v=4Q3whVVVwYw) by Reid Projects.
 
 ***
