@@ -19,7 +19,7 @@ All notable changes to this project are documented here. The format follows
 - `Doc/VERSIONS.md` with the validated ESPHome/ESP-IDF/tool versions, plus
   user-facing validated-version notes in the installation guides.
 - Host-testable `cse7761_core_*` headers for protocol, conversion, calibration
-  and energy, with 33 doctest cases.
+  and energy, with 38 doctest cases.
 - Stock 18-coefficient calibration core and opt-in `calibration_mode: stock`
   pipeline with read-only NVS probe, stock conversion, 500 mA range selection,
   identity fallback and NVS payload parser. `offset` remains the default and
@@ -27,6 +27,8 @@ All notable changes to this project are documented here. The format follows
 - Golden comparison test between the production offset and stock pipelines, with
   a 2 % drift guard and explicit manual approval metadata. Baseline is
   code-generated, not a physical capture.
+- Diagnostic `calibration_status` text sensor exposing the active mode and NVS
+  result, useful when the device has no physical access.
 - Pull request template and CI workflow for documentation links and host tests.
 - CI jobs for ESPHome config validation, main/manual compile, changelog fragment
   enforcement and gitleaks secret scanning.

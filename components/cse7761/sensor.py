@@ -32,6 +32,7 @@ CONF_ENERGY_EXPORTED = "energy_exported"
 CONF_DEBUG_SENSOR_HEX_ID = "debug_sensor_hex_id"
 CONF_DEBUG_SENSOR_BIN_ID = "debug_sensor_bin_id"
 CONF_CALIBRATION_MODE = "calibration_mode"
+CONF_CALIBRATION_STATUS = "calibration_status"
 
 CONFIG_SCHEMA = (
     cv.Schema(
@@ -40,6 +41,7 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_CALIBRATION_MODE, default="offset"): cv.one_of(
                 "offset", "stock", lower=True
             ),
+            cv.Optional(CONF_CALIBRATION_STATUS): cv.use_id(text_sensor.TextSensor),
             cv.Optional(CONF_VOLTAGE): sensor.sensor_schema(
                 unit_of_measurement=UNIT_VOLT,
                 accuracy_decimals=1,
@@ -92,7 +94,13 @@ CONFIG_SCHEMA = (
 )
 
 FINAL_VALIDATE_SCHEMA = uart.final_validate_device_schema(
-    "cse7761", baud_rate=38400, require_rx=True, require_tx=True
+    "cse7761",
+    baud_rate=38400,
+    data_bits=8,
+    parity="EVEN",
+    stop_bits=1,
+    require_rx=True,
+    require_tx=True,
 )
 
 
@@ -122,4 +130,7 @@ async def to_code(config):
     if debug_sensor_bin_config := config.get(CONF_DEBUG_SENSOR_BIN_ID):
         debug_sensor_bin = await cg.get_variable(debug_sensor_bin_config)
         cg.add(var.set_debug_text_sensor_bin(debug_sensor_bin))
+    if calibration_status_config := config.get(CONF_CALIBRATION_STATUS):
+        calibration_status = await cg.get_variable(calibration_status_config)
+        cg.add(var.set_calibration_status_sensor(calibration_status))
 

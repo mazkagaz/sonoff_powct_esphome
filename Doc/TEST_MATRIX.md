@@ -19,7 +19,7 @@ Pass = green in CI/HIL; N/A = not applicable.
 | REQ-COMM-002 | UNIT-ERR-001..003 | Unit | Planned |
 | REQ-API-001 | FUNC-CONFIG-001 | Functional | Planned |
 | REQ-SEC-001 | FUNC-SEC-001, SEC-SCAN-001 | Functional/CI | Planned |
-| REQ-CONFIG-001 | FUNC-CONFIG-001..004 | Functional | Planned |
+| REQ-CONFIG-001 | UNIT-STATUS-001, FUNC-CONFIG-001..004 | Unit/Functional | Partial — status mapping tested; CI config validates YAML |
 | REQ-SAFE-001 | DOC-CHECK-001 | Docs | Planned |
 | REQ-DOC-001 | DOC-CHECK-001, PR-CHECK-001 | Docs/Process | Partial |
 | REQ-TEST-001 | CI-HOST-001, PR-CHECK-001 | CI/Process | Partial |
@@ -32,7 +32,7 @@ Pass = green in CI/HIL; N/A = not applicable.
 
 ## Current baseline
 
-- 33 doctest cases pass in the host suite, including the production golden test.
+- 38 doctest cases pass in the host suite, including the production golden test.
 - Protocol, conversion, calibration, stock conversion, stock calibration and
   energy headers are extracted and covered.
 - The stock quadratic pipeline is available through opt-in
