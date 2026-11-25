@@ -10,11 +10,17 @@ add_executable(host_tests
     test_protocol.cpp
     test_conversion.cpp
     test_calibration.cpp
+    test_stock_calibration.cpp
+    test_stock_conversion.cpp
+    test_golden_measurements.cpp
     test_energy.cpp
 )
 target_include_directories(host_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party
     ${CMAKE_CURRENT_SOURCE_DIR}/../../components/cse7761
+)
+target_compile_definitions(host_tests PRIVATE
+    GOLDEN_MEASUREMENTS_FILE="${CMAKE_CURRENT_SOURCE_DIR}/../golden/measurements.csv"
 )
 target_compile_options(host_tests PRIVATE -Wall -Wextra -Wpedantic)
 

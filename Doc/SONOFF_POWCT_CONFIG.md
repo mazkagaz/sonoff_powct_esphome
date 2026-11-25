@@ -16,6 +16,18 @@
 | GPIO25 | CSE7761 Rx                          |
 | GPIO26 | CSE7761 Tx                          |
 
+## Calibration mode
+
+- `calibration_mode: offset` (default): channel-B bias correction; preserves the
+  previous behaviour.
+- `calibration_mode: stock`: reads the stock calibration payload from NVS in
+  read-only mode, applies the 18 quadratic coefficients and the low/high ranges.
+  If no valid payload is found, identity coefficients are used and a warning is
+  logged.
+
+The stock mode is opt-in; its measurement accuracy is not yet validated on
+hardware.
+
 ## Measurement channels and CT
 
 | Channel | Use in this firmware |

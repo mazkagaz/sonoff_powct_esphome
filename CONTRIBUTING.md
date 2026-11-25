@@ -130,6 +130,22 @@ ctest --test-dir build/host --output-on-failure
 - Hardware-in-the-loop tests follow [Doc/TEST_PLAN.md](Doc/TEST_PLAN.md); they are
   required before a release that changes measurement.
 
+## Golden measurement changes
+
+`tests/golden/measurements.csv` is a reviewed reference, not a generated
+snapshot. If the golden test fails:
+
+1. compare the actual value with the production/reference measurement;
+2. update the expected value only after validation;
+3. fill `approved_by`, `approval_reason` and `captured_at`;
+4. explain the change in the PR and keep the production source visible.
+
+The test rejects rows without `approved_by` or `approval_reason`. A drift above
+`max_drift_pct` also requires `drift_approved_by`/`drift_approval_reason` and
+must stay within `drift_approved_pct`. Do not regenerate or bulk-edit golden
+values without a human review. Baseline rows use `source=baseline` (generated
+from the current code); physical capture rows use `source=prod`.
+
 ## Changelog fragments
 
 Add one file per PR in `changelog.d/`:

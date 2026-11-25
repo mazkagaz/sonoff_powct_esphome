@@ -17,6 +17,18 @@
 | GPIO25 | CSE7761 Rx |
 | GPIO26 | CSE7761 Tx |
 
+## Mode d’étalonnage
+
+- `calibration_mode: offset` (défaut) : correction de biais par le canal B ;
+  conserve le comportement précédent.
+- `calibration_mode: stock` : lit en lecture seule la calibration stock dans la
+  NVS, applique les 18 coefficients quadratiques et les gammes basse/haute. Si
+  aucun payload valide n’est trouvé, les coefficients identité sont utilisés et
+  un avertissement est journalisé.
+
+Le mode stock est opt-in ; sa précision de mesure n’est pas encore validée sur
+matériel.
+
 ## Canaux de mesure et CT
 
 | Canal | Usage dans ce firmware |

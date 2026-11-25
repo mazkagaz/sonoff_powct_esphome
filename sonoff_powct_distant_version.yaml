@@ -93,6 +93,8 @@ text_sensor:
 sensor:
   - platform: cse7761
     id: cse7761_comp
+    # calibration_mode: offset (default) or stock; stock requires a component
+    # version that supports the option (available after this branch is merged).
     update_interval: 2s
     debug_sensor_hex_id: lecture_registre_debug_hex
     debug_sensor_bin_id: lecture_registre_debug_bin

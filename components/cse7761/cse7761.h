@@ -7,6 +7,7 @@
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
 #include "esphome/core/preferences.h"
+#include "cse7761_core_stock_calibration.h"
 #include <vector>
 
 
@@ -50,6 +51,7 @@ namespace esphome {
       void read_register_service(std::string register_number_str, int size);
       void write_register_service(std::string register_number_str, std::string value_str);
       void set_calibration_mode(bool state);
+      void set_stock_calibration(bool state);
 
     protected:
       // Sensors
@@ -79,6 +81,9 @@ namespace esphome {
       double software_current_offset_B_{0};
       double software_power_offset_A_{0};
       double software_power_offset_B_{0};
+      bool stock_calibration_enabled_{false};
+      cse7761_core::StockCalibration stock_calibration_{};
+      uint8_t stock_range_{1};
       uint32_t last_update_time_{0};
       uint32_t last_save_time_{0};
       double accumulated_energy_received_{0.0f};
@@ -92,6 +97,7 @@ namespace esphome {
       void get_data_();
       std::vector<uint8_t> read_register(int reg, int size);
       void perform_calibration_write_();
+      void probe_stock_calibration_();
     };
 
   }  // namespace cse7761

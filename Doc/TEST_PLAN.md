@@ -45,13 +45,28 @@
 Test data lives in `tests/data/` and changes require review: a golden-file update
 must come with an explanation.
 
+### 5.1 Golden measurement tests
+
+`tests/golden/measurements.csv` feeds the same raw U/I/P samples through the
+**production offset pipeline** and the **stock pipeline**. It compares both exact
+micro-unit outputs and computes the drift. The baseline covers 220/240 V,
+0–100 A and an export power-sign case.
+
+A drift above `max_drift_pct` (currently 2 %) fails unless
+`drift_approved_by`/`drift_approval_reason` are filled and the drift stays within
+`drift_approved_pct`. Expected-value changes also require `approved_by` and
+`approval_reason`, with PR review.
+
+The rows are a **baseline generated from the current code**, not physical
+measurements. See [tests/golden/README.md](../tests/golden/README.md).
+
 ## 5. Unit test areas
 
 | Area | Representative cases | Test ID prefix |
 |---|---|---|
 | Protocol | Sync, checksum, register size, endianness, short frame | `UNIT-PROTO` |
 | Conversion | Voltage/current/power formulas, truncation, invalid MSB | `UNIT-CONV` |
-| Calibration | 18 coefficients, low/high range, 500 mA boundary, negative clamp, fallback | `UNIT-CAL` |
+| Calibration | 18 coefficients, low/high range, 500 mA boundary, negative clamp, fallback, stock NVS parser | `UNIT-CAL` |
 | Filter | Median/trimmed mean, reset threshold, short windows | `UNIT-FILTER` |
 | Energy | Import/export integration, anti-creep, reboot restore, `millis()` wrap | `UNIT-ENERGY` |
 | Errors | Timeout, keep-last-good, 100-failure policy | `UNIT-ERR` |

@@ -31,11 +31,15 @@ CONF_ENERGY_RECEIVED = "energy_received"
 CONF_ENERGY_EXPORTED = "energy_exported"
 CONF_DEBUG_SENSOR_HEX_ID = "debug_sensor_hex_id"
 CONF_DEBUG_SENSOR_BIN_ID = "debug_sensor_bin_id"
+CONF_CALIBRATION_MODE = "calibration_mode"
 
 CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(CSE7761Component),
+            cv.Optional(CONF_CALIBRATION_MODE, default="offset"): cv.one_of(
+                "offset", "stock", lower=True
+            ),
             cv.Optional(CONF_VOLTAGE): sensor.sensor_schema(
                 unit_of_measurement=UNIT_VOLT,
                 accuracy_decimals=1,
@@ -96,7 +100,8 @@ async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
-    
+    cg.add(var.set_stock_calibration(config[CONF_CALIBRATION_MODE] == "stock"))
+
     for key in [
         CONF_VOLTAGE,
         CONF_CURRENT_1,

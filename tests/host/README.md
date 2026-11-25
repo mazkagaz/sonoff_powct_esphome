@@ -15,7 +15,15 @@ Phase 1 contains a toolchain smoke test. Phase 2 adds tests for the extracted
 
 - protocol framing and checksums;
 - stock conversions and ranges;
-- quadratic calibration and fallback;
+- quadratic calibration, stock NVS parser and fallback;
+- stock conversion, stock calibration and range selection;
+- the production offset golden measurement pipeline;
 - filter, energy and error handling.
+
+The golden test reads `../golden/measurements.csv`, compares production and stock
+outputs, and computes drift. Above 2 % drift, `drift_approved_by` and
+`drift_approval_reason` are required; expected-value changes require
+`approved_by`/`approval_reason` and a manual review. Rows are code-generated
+baselines, not physical captures.
 
 Test data such as recorded UART frames belongs in `tests/data/`.
