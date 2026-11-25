@@ -1,5 +1,10 @@
 #include "cse7761.h"
 
+#include "cse7761_core_calibration.h"
+#include "cse7761_core_conversion.h"
+#include "cse7761_core_energy.h"
+#include "cse7761_core_protocol.h"
+
 #include "esphome/core/log.h"
 
 #include <sstream>
@@ -40,12 +45,6 @@ namespace esphome {
     static const uint8_t CSE7761_REG_RMS_IA_OFFSET = 0x0E; // (2) RmsIAOS (Current RMS Offset)
     static const uint8_t CSE7761_REG_RMS_IB_OFFSET = 0x0F; // (2) RmsIAOS (Current RMS Offset)
 
-    // Calibration constants
-    // TODO: read then from esphome yaml for more adaptability
-    static const int CALIBRATION_MEASUREMENTS = 20;
-    static const float CALIBRATION_CURRENT_A_B_SCALE_FACTOR = 10.46; // see Doc/CALIBRATION.md
-    static const float CALIBRATION_POWER_A_B_SCALE_FACTOR = -8.89; // see Doc/CALIBRATION.md
-
     static const uint8_t CSE7761_REG_ANGLE = 0x22;      // (2) The phase angle between current and voltage (0x0000)
     static const uint8_t CSE7761_REG_UFREQ = 0x23;      // (2) The effective value of channel A current (0x0000)
     static const uint8_t CSE7761_REG_RMSIA = 0x24;      // (3) The effective value of channel A current (0x000000)
@@ -62,8 +61,6 @@ namespace esphome {
     static const uint8_t CSE7761_CMD_RESET = 0x96;         // Reset command, after receiving the command, the chip resets
     static const uint8_t CSE7761_CMD_CLOSE_WRITE = 0xDC;   // Close write operation
     static const uint8_t CSE7761_CMD_ENABLE_WRITE = 0xE5;  // Enable write operation
-
-    enum CSE7761 { RMS_IAC, RMS_IBC, RMS_UC, POWER_PAC, POWER_PBC, POWER_SC, ENERGY_AC, ENERGY_BC };
 
     //***********************************************************************************************
     // setup: starting routine
@@ -117,12 +114,18 @@ namespace esphome {
     //***********************************************************************************************
     void CSE7761Component::perform_calibration_write_() {
 
-      float calibration_count_F = (float)this->calibration_count_;
-      // sofware calibration unless I find a way to use hardware calibration
-      this->software_current_offset_B_ -= this->sum_current_B_ / calibration_count_F;
-      this->software_power_offset_B_ -= this->sum_power_B_ / calibration_count_F;
-      this->software_current_offset_A_ = CALIBRATION_CURRENT_A_B_SCALE_FACTOR * this->software_current_offset_B_;
-      this->software_power_offset_A_ = CALIBRATION_POWER_A_B_SCALE_FACTOR * this->software_power_offset_B_;
+      cse7761_core::CalibrationOffsets offsets{
+          this->software_current_offset_A_,
+          this->software_current_offset_B_,
+          this->software_power_offset_A_,
+          this->software_power_offset_B_,
+      };
+      offsets = cse7761_core::apply_calibration_offsets(
+          offsets, this->sum_current_B_, this->sum_power_B_, this->calibration_count_);
+      this->software_current_offset_A_ = offsets.current_a;
+      this->software_current_offset_B_ = offsets.current_b;
+      this->software_power_offset_A_ = offsets.power_a;
+      this->software_power_offset_B_ = offsets.power_b;
       /* // offsets registers  : works fine with channel B but channel A bias is to large on Sonoff POWCT
       * // (> max uint16_t data) and can't be corrected with the cse7761 offset registers. Or I did not find
       * // the way at this moment.
@@ -179,27 +182,7 @@ namespace esphome {
     //***********************************************************************************************
     void CSE7761Component::write_(uint8_t reg, uint16_t data) {
       uint8_t buffer[5];
-
-      buffer[0] = 0xA5;
-      buffer[1] = reg;
-      uint32_t len = 2;
-      if (data) {
-        if (data < 0xFF) {
-          buffer[2] = data & 0xFF;
-          len = 3;
-        } else {
-          buffer[2] = (data >> 8) & 0xFF;
-          buffer[3] = data & 0xFF;
-          len = 4;
-        }
-        uint8_t crc = 0;
-        for (uint32_t i = 0; i < len; i++) {
-          crc += buffer[i];
-        }
-        buffer[len] = ~crc;
-        len++;
-      }
-
+      const size_t len = cse7761_core::build_write_frame(reg, data, buffer);
       this->write_array(buffer, len);
     }
 
@@ -234,19 +217,11 @@ namespace esphome {
       }
 
       rcvd--;
-      uint32_t result = 0;
-      // CRC check
-      uint8_t crc = 0xA5 + reg;
-      for (uint32_t i = 0; i < rcvd; i++) {
-        result = (result << 8) | buffer[i];
-        crc += buffer[i];
-      }
-      crc = ~crc;
-      if (crc != buffer[rcvd]) {
+      if (!cse7761_core::validate_read_frame(reg, buffer, rcvd, buffer[rcvd])) {
         return false;
       }
 
-      *value = result;
+      *value = cse7761_core::decode_be(buffer, rcvd);
       return true;
     }
 
@@ -276,26 +251,8 @@ namespace esphome {
     // - uint32_t unit : index of measurements, see enum CSE7761
     //***********************************************************************************************
     uint32_t CSE7761Component::coefficient_by_unit_(uint32_t unit) {
-      switch (unit) {
-        case RMS_IAC:
-          return (0x800000 * 100 / this->data_.coefficient[RMS_IAC]) * 10 / 4.7;  // Stay within 32 bits // *100*10 mA->A // K_1=4.7
-        case RMS_IBC:
-          return (0x800000 * 100 / this->data_.coefficient[RMS_IBC]) * 10 / 4.7;  // Stay within 32 bits // *100*10 mA->A // K_1=4.7
-        case RMS_UC:
-          return 0x400000 * 100 / this->data_.coefficient[RMS_UC]; // *100 10mV->V // K_2=1
-        case POWER_PAC:
-          return 0x80000000 / this->data_.coefficient[POWER_PAC] / 4.7; // K_1=4.7 // K_2=1
-        case POWER_PBC:
-          return 0x80000000 / this->data_.coefficient[POWER_PBC] / 4.7; // K_1=4.7 // K_2=1
-          // TODO: to verify the folowing formulas are OK with CSE7761 datasheet
-        case POWER_SC:
-          return 0x80000000 / this->data_.coefficient[POWER_SC];
-        case ENERGY_AC:
-          return 0x80000000 / this->data_.coefficient[ENERGY_AC];
-        case ENERGY_BC:
-          return 0x80000000 / this->data_.coefficient[ENERGY_BC];
-      }
-      return 0;
+      return cse7761_core::coefficient_for_unit(static_cast<cse7761_core::Measure>(unit),
+                                                this->data_.coefficient);
     }
 
     //***********************************************************************************************
@@ -315,9 +272,9 @@ namespace esphome {
       uint16_t coeff_chksum = this->read_(CSE7761_REG_COEFFCHKSUM, 2);
       if ((calc_chksum != coeff_chksum) || (!calc_chksum)) {
         ESP_LOGD(TAG, "Default calibration");
-        this->data_.coefficient[RMS_IAC] = CSE7761_IREF;
-        this->data_.coefficient[RMS_UC] = CSE7761_UREF;
-        this->data_.coefficient[POWER_PAC] = CSE7761_PREF;
+        this->data_.coefficient[cse7761_core::RMS_IAC] = CSE7761_IREF;
+        this->data_.coefficient[cse7761_core::RMS_UC] = CSE7761_UREF;
+        this->data_.coefficient[cse7761_core::POWER_PAC] = CSE7761_PREF;
       }
 
       this->write_(CSE7761_SPECIAL_COMMAND, CSE7761_CMD_ENABLE_WRITE);
@@ -372,21 +329,26 @@ namespace esphome {
       // without ac power and measure the noise to calibrate the tension
       uvalue = this->read_(CSE7761_REG_RMSU, 3);
       this->data_.voltage_rms = (uvalue >= 0x800000) ? 0 : uvalue;
-      float voltage = (float) this->data_.voltage_rms / this->coefficient_by_unit_(RMS_UC);
+      float voltage = cse7761_core::voltage_from_raw(
+          this->data_.voltage_rms, this->coefficient_by_unit_(cse7761_core::RMS_UC));
       if (this->voltage_sensor_ != nullptr) {
         this->voltage_sensor_->publish_state(voltage);
       }
 
       svalue = this->read_(CSE7761_REG_RMSIA, 3);
-      this->data_.current_rms[0] = (svalue&0x800000)?svalue|0xFF000000:svalue;
-      this->active_current_A_ = (((float) this->data_.current_rms[0]) / this->coefficient_by_unit_(RMS_IAC))+this->software_current_offset_A_;
+      this->data_.current_rms[0] = cse7761_core::sign_extend_24(static_cast<uint32_t>(svalue));
+      this->active_current_A_ = cse7761_core::current_from_raw(
+          static_cast<uint32_t>(svalue), this->coefficient_by_unit_(cse7761_core::RMS_IAC)) +
+          this->software_current_offset_A_;
       if (this->current_sensor_1_ != nullptr) {
         this->current_sensor_1_->publish_state(this->active_current_A_);
       }
 
       svalue = this->read_(CSE7761_REG_RMSIB, 3);
-      this->data_.current_rms[1] = (svalue&0x800000)?svalue|0xFF000000:svalue;
-      this->active_current_B_ = (((float) this->data_.current_rms[1]) / this->coefficient_by_unit_(RMS_IBC))+this->software_current_offset_B_;
+      this->data_.current_rms[1] = cse7761_core::sign_extend_24(static_cast<uint32_t>(svalue));
+      this->active_current_B_ = cse7761_core::current_from_raw(
+          static_cast<uint32_t>(svalue), this->coefficient_by_unit_(cse7761_core::RMS_IBC)) +
+          this->software_current_offset_B_;
       if (this->current_sensor_2_ != nullptr) {
         this->current_sensor_2_->publish_state(this->active_current_B_);
       }
@@ -401,44 +363,54 @@ namespace esphome {
       uint32_t now = esphome::millis();
       svalue = this->read_(CSE7761_REG_POWERPA, 4);
       this->data_.active_power[0] = (int32_t) svalue;
-      this->active_power_A_ = (((float) this->data_.active_power[0]) / this->coefficient_by_unit_(POWER_PAC))+this->software_power_offset_A_;
+      this->active_power_A_ = cse7761_core::power_from_raw(
+          static_cast<uint32_t>(svalue), this->coefficient_by_unit_(cse7761_core::POWER_PAC)) +
+          this->software_power_offset_A_;
       ESP_LOGD(TAG, "Puissance: %f", this->active_power_A_);
       if (this->power_sensor_1_ != nullptr) {
         this->power_sensor_1_->publish_state(this->active_power_A_);
       }
       if (!this->ok_energy_){
         this->last_active_power_A_ = this->active_power_A_;
-        this->last_update_time_ = (double) now;
+        this->last_update_time_ = now;
         this->ok_energy_ = true;
       }
       else{
-        double time_delta_s = ((double)now - this->last_update_time_) / 1000.0f;
-        this->last_update_time_ = (double) now;
-        double mean_power = (this->last_active_power_A_ + this->active_power_A_) / 2.0f;
+        const double previous_power = this->last_active_power_A_;
+        const double time_delta_s = cse7761_core::elapsed_seconds(now, this->last_update_time_);
+        const double mean_power = (previous_power + this->active_power_A_) / 2.0;
+        this->last_update_time_ = now;
+
+        cse7761_core::EnergyTotals totals{
+            this->accumulated_energy_received_, this->accumulated_energy_exported_};
+        totals = cse7761_core::integrate_energy(
+            totals, previous_power, this->active_power_A_, time_delta_s);
+        this->accumulated_energy_received_ = totals.received;
+        this->accumulated_energy_exported_ = totals.exported;
         this->last_active_power_A_ = this->active_power_A_;
-        // Energy = Power (W) * Delta Time (s) / 3600 (s/h) = Wh
-        double delta_E = (mean_power * time_delta_s) / 3600.0f;
-        if (mean_power > 0.0f){
-          this->accumulated_energy_received_ += delta_E;
+
+        if (mean_power > 0.0) {
           if (this->energy_received_ != nullptr) {
             this->energy_received_->publish_state(this->accumulated_energy_received_ / 1000.0f); // Publish in kWh
           }
-        }
-        else{ //mean_power <= 0.0f
-          this->accumulated_energy_exported_ -= delta_E;
+        } else {
           if (this->energy_exported_ != nullptr) {
             this->energy_exported_->publish_state(this->accumulated_energy_exported_ / 1000.0f); // Publish in kWh
           }
         }
-        ESP_LOGD(TAG, "dt = %f ; P_moy = %f ; dE = %f",time_delta_s, mean_power, delta_E);
-        ESP_LOGD(TAG, "dE_r = %f ; dE_e = %f", this->energy_received_->state, this->energy_exported_->state);
+        ESP_LOGD(TAG, "dt = %f ; P_moy = %f", time_delta_s, mean_power);
+        if (this->energy_received_ != nullptr && this->energy_exported_ != nullptr) {
+          ESP_LOGD(TAG, "dE_r = %f ; dE_e = %f", this->energy_received_->state, this->energy_exported_->state);
+        }
         ESP_LOGD(TAG, "Total E_r = %f ; Total E_e = %f", this->accumulated_energy_received_, this->accumulated_energy_exported_);
       }
 
 
       svalue = this->read_(CSE7761_REG_POWERPB, 4);
       this->data_.active_power[1] = (int32_t) svalue; // mesure du bruit
-      this->active_power_B_ = (((float) this->data_.active_power[1]) / this->coefficient_by_unit_(POWER_PBC))+this->software_power_offset_B_;
+      this->active_power_B_ = cse7761_core::power_from_raw(
+          static_cast<uint32_t>(svalue), this->coefficient_by_unit_(cse7761_core::POWER_PBC)) +
+          this->software_power_offset_B_;
       if (this->power_sensor_2_ != nullptr) {
         this->power_sensor_2_->publish_state(this->active_power_B_);
       }
@@ -471,15 +443,16 @@ namespace esphome {
         this->sum_power_B_ += this->active_power_B_;
         this->calibration_count_++;
 
-        if (this->calibration_count_ >= CALIBRATION_MEASUREMENTS) {
+        if (this->calibration_count_ >= cse7761_core::kCalibrationMeasurements) {
           this->perform_calibration_write_();
         }
       }
 
 
       // save every hour
-      if (this->last_save_time_ == 0 || (esphome::millis() - this->last_save_time_) >= 3600000) {
-        this->last_save_time_ = esphome::millis();
+      const uint32_t save_now = esphome::millis();
+      if (cse7761_core::should_save_energy(save_now, this->last_save_time_)) {
+        this->last_save_time_ = save_now;
 
         // Utilisation de la structure pour la sauvegarde
         EnergyDataStruct current_values = {
@@ -589,18 +562,10 @@ namespace esphome {
       // ÉTAPE 3: VÉRIFICATION DU CRC (similaire à read_once_)
       // Le dernier octet est le CRC. Il est stocké à data[size].
       uint8_t received_crc = data[size];
-      uint8_t calculated_crc = 0xA5 + register_number;
-
-      // Calcul du CRC sur tous les octets SAUF le dernier (l'octet de CRC reçu)
-      for (int i = 0; i < size; i++) {
-        calculated_crc += data[i];
-      }
-
-      calculated_crc = ~calculated_crc; // Inversion du résultat
-
-      if (calculated_crc != received_crc) {
-        ESP_LOGE(TAG, "CSE7761: Erreur CRC pour 0x%X. Calculé: 0x%02X, Reçu: 0x%02X",
-                 register_number, calculated_crc, received_crc);
+      if (!cse7761_core::validate_read_frame(
+              static_cast<uint8_t>(register_number), data.data(), size, received_crc)) {
+        ESP_LOGE(TAG, "CSE7761: Erreur CRC pour 0x%X. Reçu: 0x%02X",
+                 register_number, received_crc);
         return {}; // Retourne un vecteur vide en cas d'échec
       }
 

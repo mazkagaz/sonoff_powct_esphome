@@ -10,7 +10,7 @@ ctest --test-dir build/host --output-on-failure
 ```
 
 Phase 1 contains a toolchain smoke test. Phase 2 adds tests for the extracted
-`components/cse7761/core/` modules:
+`components/cse7761/cse7761_core_*` headers:
 
 - protocol framing and checksums;
 - stock conversions and ranges;

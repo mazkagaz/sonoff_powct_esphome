@@ -15,8 +15,13 @@ FetchContent_MakeAvailable(doctest)
 
 add_executable(host_tests
     test_smoke.cpp
+    test_protocol.cpp
+    test_conversion.cpp
+    test_calibration.cpp
+    test_energy.cpp
 )
 target_link_libraries(host_tests PRIVATE doctest::doctest)
+target_include_directories(host_tests PRIVATE ../../components/cse7761)
 target_compile_options(host_tests PRIVATE -Wall -Wextra -Wpedantic)
 
 enable_testing()

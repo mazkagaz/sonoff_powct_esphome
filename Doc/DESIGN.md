@@ -33,15 +33,16 @@ CSE7761 --UART 38400 8E1--> protocol parser --> raw registers
 
 | Layer | Responsibility | Current location | Target |
 |---|---|---|---|
-| Transport | UART read/write, timeouts | `components/cse7761/cse7761.cpp` | `core/transport` + thin ESPHome adapter |
-| Protocol | `0xA5` frames, checksum, register sizes | component | `core/protocol` |
-| Conversion | Raw → mV/mA/mW, stock constants | component | `core/conversion` |
-| Calibration | Quadratic coefficients, ranges, fallback | component | `core/calibration` |
-| Filter/energy | Filtering, integration, anti-creep | component | `core/energy` |
+| Transport | UART read/write, timeouts | `components/cse7761/cse7761.cpp` | thin ESPHome adapter |
+| Protocol | `0xA5` frames, checksum, register sizes | `cse7761_core_protocol.h` | component root |
+| Conversion | Raw → mV/mA/mW, stock constants | `cse7761_core_conversion.h` | component root |
+| Calibration | Offset scaling and future quadratic model | `cse7761_core_calibration.h` | component root |
+| Filter/energy | Filtering, integration, anti-creep | `cse7761_core_energy.h` | component root |
 | ESPHome glue | Sensors, preferences, actions, OTA | component | component |
 
-The `core/` extraction is the main testability refactor; it must not change
-behaviour.
+The core extraction is the main testability refactor; it must not change
+behaviour. ESPHome copies only component-root files, so the pure headers use the
+`cse7761_core_` prefix instead of a `core/` subdirectory.
 
 ## 3. Protocol
 
@@ -120,7 +121,7 @@ calibration must be pure functions for host tests.
 
 ## 9. Testability
 
-- Pure `core/` modules with no ESPHome includes.
+- Pure `cse7761_core_*` headers with no ESPHome includes.
 - Fake UART transport and recorded frames for functional tests.
 - Golden files for raw frames and expected converted/calibrated values.
 - HIL bench for measurement accuracy, ranges, variants and persistence.
