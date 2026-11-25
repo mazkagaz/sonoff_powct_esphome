@@ -16,7 +16,8 @@
 |---|---|---|---|
 | Unit | Pure protocol, conversion, calibration, filter, energy | Every PR | doctest + CMake/CTest, host |
 | Functional | Component behaviour with a fake UART; YAML schema and build | Every PR | doctest, `esphome config`, `esphome compile` |
-| Integration/HIL | Real POW CT, known loads, OTA, persistence | Before release and for measurement changes | pytest/pyserial, reference meter |
+| Reference/manual | Real POW CT + Shelly EM on the same circuit | Not executed | Manual CSV + results summary |
+| Integration/HIL | Real POW CT, known loads, OTA, persistence | Not available for now | pytest/pyserial, reference meter |
 
 ## 3. Environments
 
@@ -66,7 +67,11 @@ must come with an explanation.
 - Validate that no secret is required in the repository and that
   `secrets.yaml.example` contains every referenced key.
 
-## 7. HIL matrix
+## 7. HIL matrix (not executed)
+
+The full HIL bench is not available for now. The manual reference validation is
+the only planned hardware comparison; it is **NOT EXECUTED**.
+
 
 | Case | Load / condition | Acceptance |
 |---|---|---|
@@ -78,6 +83,19 @@ must come with an explanation.
 | Reboot | Power cycle | Energy restored; no duplicate/lost hour |
 | OTA | Encrypted OTA | Update succeeds; device reconnects |
 | Variant | Ring 100 A if available | Documented as exploratory, not a support claim |
+
+### 7.1 Manual reference validation (NOT EXECUTED)
+
+The procedure and data template are ready:
+
+- [REFERENCE_VALIDATION.md](REFERENCE_VALIDATION.md) — safety, setup, cases,
+  provisional tolerances and reporting.
+- [reference_measurements_template.csv](../tests/hil/reference_measurements_template.csv)
+  — one row per load/window.
+
+Status: **NOT EXECUTED**. It remains pending until real measurements and a
+results summary exist. This is a manual Shelly EM comparison, not a calibrated
+metrology test or a full HIL pass.
 
 ## 8. CI
 

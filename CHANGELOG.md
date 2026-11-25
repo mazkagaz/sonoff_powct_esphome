@@ -23,6 +23,8 @@ All notable changes to this project are documented here. The format follows
 - Pull request template and CI workflow for documentation links and host tests.
 - CI jobs for ESPHome config validation, main/manual compile, changelog fragment
   enforcement and gitleaks secret scanning.
+- Manual POW CT vs Shelly EM reference-validation procedure and CSV template.
+  **Status: NOT EXECUTED; no measurements collected yet.**
 
 ### Changed
 
