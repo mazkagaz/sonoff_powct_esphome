@@ -1,0 +1,7 @@
+# Python development dependencies.
+# Tested with Python 3.13.5.
+# Install inside the project virtual environment:
+#   python3 -m venv .venv
+#   . .venv/bin/activate
+#   python -m pip install -r requirements-dev.txt
+esphome==2026.11.1

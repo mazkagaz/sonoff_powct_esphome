@@ -72,6 +72,7 @@ To begin the installation and configuration of my device, please consult the det
 | **Register Debug Guide** | A picture is worth a thousand words... | **[Doc/DEBUG.md](Doc/DEBUG.md)** |
 | **Configuration Details** | Detailed explanations of the Sonoff POW CT specific options and the use of advanced **debug functions**. | **[Doc/SONOFF\_POWCT\_CONFIG.md](Doc/SONOFF\_POWCT\_CONFIG.md)** |
 | **Datasheet** | Technical manual for the **CSE7761** energy measurement circuit. | **[Doc/CSE7761UserManual\_1672133056.pdf](Doc/CSE7761UserManual\_1672133056.pdf)** |
+| **Engineering Docs** | Specification, design, test plan and ADRs (English). | **[Doc/README.md](Doc/README.md)** |
 
 ***
 

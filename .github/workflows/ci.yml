@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Check relative Markdown links
+        run: python .github/scripts/check_links.py
+
+  host-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        if: hashFiles('tests/host/CMakeLists.txt') != ''
+        run: cmake -S tests/host -B build/host
+      - name: Build
+        if: hashFiles('tests/host/CMakeLists.txt') != ''
+        run: cmake --build build/host --parallel
+      - name: Test
+        if: hashFiles('tests/host/CMakeLists.txt') != ''
+        run: ctest --test-dir build/host --output-on-failure
