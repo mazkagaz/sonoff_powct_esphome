@@ -93,8 +93,7 @@ calibration must be pure functions for host tests.
 - **Stock conversion (implemented):** `cse7761_core_stock_conversion.h` implements
   the stock mV/mA/mW formulas and the `0.2033` constant.
 - **Integration (opt-in):** `calibration_mode: stock` probes the NVS read-only
-  (`calib_coefficient0` and candidate namespaces, including `user_unusual` /
-  `user_usual`, plus the iotgo `content` JSON blob), applies the stock conversion
+  (`calib_coefficient0` and candidate namespaces), applies the stock conversion
   and 18 coefficients, and falls back to identity if no valid payload is found.
   `calibration_mode: offset` remains the default and preserves the previous
   channel-B bias correction.

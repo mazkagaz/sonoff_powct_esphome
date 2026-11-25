@@ -1,7 +1,6 @@
 #include "cse7761.h"
 
 #include "cse7761_core_calibration.h"
-#include "cse7761_core_calibration_payload.h"
 #include "cse7761_core_calibration_status.h"
 #include "cse7761_core_conversion.h"
 #include "cse7761_core_energy.h"
@@ -130,8 +129,7 @@ namespace esphome {
     //***********************************************************************************************
     void CSE7761Component::probe_stock_calibration_() {
       static const char *const namespaces[] = {
-          "user_unusual", "user_usual", "nvs", "user", "iotgo", "sonoff", "esf", "calib",
-          "config", "storage", "app"};
+          "nvs", "user", "iotgo", "sonoff", "esf", "calib", "config", "storage", "app"};
       static const char *const keys[] = {
           "calib_coefficient0", "calib_coefficient", "calib_coefficient1"};
       char buffer[512];
@@ -171,32 +169,6 @@ namespace esphome {
             ESP_LOGW(TAG, "Reading NVS key '%s' in namespace '%s' failed: %s", key, ns,
                      esp_err_to_name(read_error));
           }
-        }
-
-        // iotgo stores some calibration data in a JSON blob named "content".
-        size_t blob_size = 8192;
-        std::vector<uint8_t> blob(blob_size);
-        const esp_err_t blob_error = nvs_get_blob(handle, "content", blob.data(), &blob_size);
-        if (blob_error == ESP_OK) {
-          std::string content(reinterpret_cast<const char *>(blob.data()), blob_size);
-          std::string payload;
-          if (cse7761_core::extract_calibration_payload(content, payload)) {
-            ESP_LOGI(TAG, "Stock calibration found in NVS namespace '%s', blob 'content' (%u bytes)",
-                     ns, static_cast<unsigned>(blob_size));
-            ESP_LOGD(TAG, "Stock calibration payload: %s", payload.c_str());
-            if (cse7761_core::parse_stock_calibration(payload, this->stock_calibration_)) {
-              ESP_LOGI(TAG, "Stock calibration parsed and enabled");
-              this->calibration_status_ = cse7761_core::calibration_status_text(
-                  true, cse7761_core::StockCalibrationProbe::Found, ns, "content");
-              nvs_close(handle);
-              return;
-            }
-            invalid_payload = true;
-            ESP_LOGW(TAG, "Stock calibration blob is invalid; trying next candidate");
-          }
-        } else if (blob_error != ESP_ERR_NVS_NOT_FOUND) {
-          ESP_LOGV(TAG, "Reading NVS blob 'content' in namespace '%s' failed: %s", ns,
-                   esp_err_to_name(blob_error));
         }
         nvs_close(handle);
       }
