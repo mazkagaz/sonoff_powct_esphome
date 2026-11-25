@@ -24,8 +24,9 @@ All notable changes to this project are documented here. The format follows
   pipeline with read-only NVS probe, stock conversion, 500 mA range selection,
   identity fallback and NVS payload parser. `offset` remains the default and
   hardware accuracy validation is pending.
-- Golden measurement test harness with manual `approved_by`/`approval_reason`
-  sign-off; production rows are not captured yet.
+- Golden comparison test between the production offset and stock pipelines, with
+  a 2 % drift guard and explicit manual approval metadata. Baseline is
+  code-generated, not a physical capture.
 - Pull request template and CI workflow for documentation links and host tests.
 - CI jobs for ESPHome config validation, main/manual compile, changelog fragment
   enforcement and gitleaks secret scanning.

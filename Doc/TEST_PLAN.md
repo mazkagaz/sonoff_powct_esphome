@@ -47,18 +47,18 @@ must come with an explanation.
 
 ### 5.1 Golden measurement tests
 
-`tests/golden/measurements.csv` feeds raw U/I/P samples through the **production
-offset pipeline** and compares the exact micro-unit V/I/P outputs. The baseline
-covers 220/240 V, 0–100 A and an export power-sign case. The stock quadratic
-pipeline, ranges and parser are covered by unit tests. Any difference fails the
-test.
+`tests/golden/measurements.csv` feeds the same raw U/I/P samples through the
+**production offset pipeline** and the **stock pipeline**. It compares both exact
+micro-unit outputs and computes the drift. The baseline covers 220/240 V,
+0–100 A and an export power-sign case.
 
-Changing an expected value requires a human validation: the row must retain a
-non-empty `approved_by` and `approval_reason`, and the change is reviewed in the
-PR. The initial rows are a **baseline generated from the current code**, not physical
-measurements. Production rows cannot be captured while the load varies; if one is
-captured, it uses `source=prod`. See
-[tests/golden/README.md](../tests/golden/README.md).
+A drift above `max_drift_pct` (currently 2 %) fails unless
+`drift_approved_by`/`drift_approval_reason` are filled and the drift stays within
+`drift_approved_pct`. Expected-value changes also require `approved_by` and
+`approval_reason`, with PR review.
+
+The rows are a **baseline generated from the current code**, not physical
+measurements. See [tests/golden/README.md](../tests/golden/README.md).
 
 ## 5. Unit test areas
 

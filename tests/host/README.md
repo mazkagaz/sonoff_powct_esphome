@@ -20,8 +20,10 @@ Phase 1 contains a toolchain smoke test. Phase 2 adds tests for the extracted
 - the production offset golden measurement pipeline;
 - filter, energy and error handling.
 
-The golden pipeline test reads `../golden/measurements.csv`; changing an expected
-value requires `approved_by`/`approval_reason` and a manual review. Production
-rows are not captured yet.
+The golden test reads `../golden/measurements.csv`, compares production and stock
+outputs, and computes drift. Above 2 % drift, `drift_approved_by` and
+`drift_approval_reason` are required; expected-value changes require
+`approved_by`/`approval_reason` and a manual review. Rows are code-generated
+baselines, not physical captures.
 
 Test data such as recorded UART frames belongs in `tests/data/`.

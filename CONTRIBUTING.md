@@ -140,10 +140,11 @@ snapshot. If the golden test fails:
 3. fill `approved_by`, `approval_reason` and `captured_at`;
 4. explain the change in the PR and keep the production source visible.
 
-The test rejects rows without `approved_by` or `approval_reason`. Do not
-regenerate or bulk-edit golden values without a human review. Baseline rows use
-`source=baseline` (generated from the current code); physical capture rows use
-`source=prod`.
+The test rejects rows without `approved_by` or `approval_reason`. A drift above
+`max_drift_pct` also requires `drift_approved_by`/`drift_approval_reason` and
+must stay within `drift_approved_pct`. Do not regenerate or bulk-edit golden
+values without a human review. Baseline rows use `source=baseline` (generated
+from the current code); physical capture rows use `source=prod`.
 
 ## Changelog fragments
 

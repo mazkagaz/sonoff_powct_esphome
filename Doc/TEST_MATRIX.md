@@ -12,7 +12,7 @@ Pass = green in CI/HIL; N/A = not applicable.
 | REQ-MEAS-004 | UNIT-ENERGY-002, HIL-ZERO-001 | Unit/HIL | Planned |
 | REQ-MEAS-005 | FUNC-CADENCE-001, HIL-SOAK-001 | Functional/HIL | Planned |
 | REQ-CAL-001 | UNIT-CONV-001..003 | Unit | Partial |
-| REQ-CAL-002 | UNIT-CAL-001..003, HIL-RANGE-001 | Unit/HIL | Partial — opt-in stock pipeline implemented; hardware accuracy pending |
+| REQ-CAL-002 | UNIT-CAL-001..003, GOLDEN-DRIFT-001, HIL-RANGE-001 | Unit/Golden/HIL | Partial — opt-in stock pipeline implemented; 2 % drift guard in place; hardware accuracy pending |
 | REQ-CAL-003 | UNIT-CAL-005, FUNC-CONFIG-003 | Unit/Functional | Partial — malformed payload rejected in core |
 | REQ-ENERGY-001 | UNIT-ENERGY-001, HIL-REBOOT-001 | Unit/HIL | Partial |
 | REQ-COMM-001 | UNIT-PROTO-001..004 | Unit | Partial |
@@ -38,9 +38,10 @@ Pass = green in CI/HIL; N/A = not applicable.
 - The stock quadratic pipeline is available through opt-in
   `calibration_mode: stock`; `offset` remains the default. Hardware accuracy
   validation is still pending.
-- Golden rows are generated from the **production offset pipeline**
-  (`source=baseline`), not physical measurements; they lock the current computed
-  outputs.
+- Golden rows compare the **production offset pipeline** with the **stock
+  pipeline** at the same raw inputs; drift above 2 % needs explicit manual
+  approval. Rows are generated from code (`source=baseline`), not physical
+  measurements.
 - `esphome config` passes for both YAML files.
 - The component compiles with ESPHome 2026.11.1 and ESP-IDF 5.5.6 (selected by
   ESPHome); the historical `5.4.0` pin has been removed.
