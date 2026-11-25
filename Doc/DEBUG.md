@@ -1,3 +1,5 @@
+**English** | [Français](DEBUG_FR.md)
+
 ## 1. READ_REGISTER
 
 ![Read a register](https://github.com/mazkagaz/sonoff_powct_esphome/blob/main/Images/read_register.png)

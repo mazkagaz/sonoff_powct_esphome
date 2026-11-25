@@ -1,3 +1,5 @@
+**English** | [Français](README_FR.md)
+
 # ⚡ Sonoff POW CT ESPHome: Unleashed!
 
 > **Migrate my Sonoff POW CT energy meter to ESPHome and unlock its advanced energy monitoring features!**
@@ -14,7 +16,11 @@
 This custom ESPHome firmware allows me to fully utilize the Sonoff POW CT, providing essential energy monitoring features, especially for solar installations:
 
 * **Advanced Bidirectional Measurement**
-    * Reading of **positive** (consumption) and **negative** (production) current and power values.
+    * Reading of **positive** (consumption) and **negative** (production) power and energy values.
+    * “Bidirectional” means signed power/energy on the **single CT** (import/export);
+      it does not add a second CT. The standard POW CT has one CT on channel A;
+      channel B is used internally as a bias reference. See the **Limitations**
+      section below.
     * Fast updates, with a new value per second.
 
 * **Separate Energy Meters**
@@ -31,6 +37,17 @@ This custom ESPHome firmware allows me to fully utilize the Sonoff POW CT, provi
 
 * **Native Integration**
     * Perfect and local integration with Home Assistant via the native ESPHome API (No Cloud).
+
+## ⚠️ Limitations
+
+* **Single CT.** The standard POW CT has one CT clamp on channel A. Channel B is
+  used internally as a bias reference, not as a second measurement. Measuring two
+  circuits (grid + PV/battery) requires a second CT, wiring to channel B, a
+  dedicated calibration, and disabling/rethinking the bias correction: that is a
+  hardware modification, not a YAML option.
+* **Hardware variants.** Other variants, including the POW CT “Ring” 100 A, are
+  not guaranteed to work with the same board definition. See the
+  [Flashing Guide](Doc/FLASHING.md).
 
 ## 🚀 Next Steps (Roadmap)
 
@@ -50,6 +67,7 @@ To begin the installation and configuration of my device, please consult the det
 | Guide | Description | Link |
 | :--- | :--- | :--- |
 | **Installation Guide** | Complete procedure for flashing and starting my device. | **[Doc/INSTALL.md](Doc/INSTALL.md)** |
+| **Flashing Guide** | Factory vs app-only/OTA images, offsets and recovery. | **[Doc/FLASHING.md](Doc/FLASHING.md)** |
 | **Calibration Guide** | Instructions for performing precise calibration of my measurements. | **[Doc/CALIBRATION.md](Doc/CALIBRATION.md)** |
 | **Register Debug Guide** | A picture is worth a thousand words... | **[Doc/DEBUG.md](Doc/DEBUG.md)** |
 | **Configuration Details** | Detailed explanations of the Sonoff POW CT specific options and the use of advanced **debug functions**. | **[Doc/SONOFF\_POWCT\_CONFIG.md](Doc/SONOFF\_POWCT\_CONFIG.md)** |

@@ -1,3 +1,5 @@
+[English](INSTALL.md) | **Français**
+
 ***
 
 ## 🛠️ Procédure de Flashe Initial
@@ -49,9 +51,14 @@ Une fois le matériel connecté, vous pouvez procéder au téléversement du mic
 2. Utilisez la **méthode de flashage standard d'ESPHome** (par exemple, le tableau de bord ESPHome, la ligne de commande ou le Web Flasher) pour téléverser le micrologiciel.
 3. Utilisez les **fichiers de configuration YAML** fournis à la racine de ce dépôt.
 
-> **Il se peut que vous deviez générer le micrologiciel, le télécharger sur votre PC, puis utiliser un outil externe (**esptool**) pour le flasher sur votre appareil.**
->
-> **Lorsque vous utilisez esptool, vous pourriez avoir besoin d'utiliser l'option** `-nostub`.
+> **Important — quelle image flasher ?**
+> Pour le premier flash, utilisez une image **factory** (bootloader + table de
+> partitions + application), pas une image app-only/OTA. Le Web Flasher/tableau
+> de bord ESPHome s’en charge automatiquement.
+> Si vous flashez manuellement avec `esptool`, suivez le
+> [Guide de flashage](FLASHING_FR.md) : il explique factory vs app-only, les
+> offsets, la sauvegarde et la récupération. Ne flashez jamais une app-only à
+> `0x0` ou `0x10000`.
 
 🔗 **Tutoriel Vidéo :** Si vous êtes nouveau dans ce processus, ce guide pourrait vous être utile : [Comment Installer ESPHome sur Sonoff Basic et Home Assistant](http://www.youtube.com/watch?v=4Q3whVVVwYw) par Reid Projects.
 

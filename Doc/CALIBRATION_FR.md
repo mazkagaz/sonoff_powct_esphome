@@ -1,3 +1,5 @@
+[English](CALIBRATION.md) | **Français**
+
 # Rapport d'Analyse de Corrélation et de Correction de Biais pour Compteur Bicanal
 
 Ce rapport fournit une analyse quantitative de la corrélation entre les erreurs de mesure intrinsèques (biais) du Canal A et du Canal B, basée sur un ensemble de données étendu provenant du fichier journal fourni. L'objectif est d'établir une formule pour corriger les mesures du Canal A en utilisant l'erreur simultanée mesurée sur le Canal B inactif.

@@ -1,3 +1,5 @@
+**English** | [Français](CALIBRATION_FR.md)
+
 # Correlation Analysis and Bias Correction Report for Dual-Channel Meter
 
 This report provides a quantitative analysis of the correlation between the inherent measurement errors (bias) of Channel A and Channel B, based on an extended dataset from the provided log file. The goal is to establish a formula to correct Channel A measurements using the simultaneous error measured on the idle Channel B.
