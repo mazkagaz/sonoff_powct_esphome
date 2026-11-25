@@ -32,7 +32,7 @@ Pass = green in CI/HIL; N/A = not applicable.
 
 ## Current baseline
 
-- 38 doctest cases pass in the host suite, including the production golden test.
+- 42 doctest cases pass in the host suite, including the production golden test.
 - Protocol, conversion, calibration, stock conversion, stock calibration and
   energy headers are extracted and covered.
 - The stock quadratic pipeline is available through opt-in

@@ -18,6 +18,7 @@ Phase 1 contains a toolchain smoke test. Phase 2 adds tests for the extracted
 - quadratic calibration, stock NVS parser and fallback;
 - stock conversion, stock calibration and range selection;
 - calibration-status text mapping for offset/stock/NVS outcomes;
+- NVS calibration payload extraction from direct strings and iotgo `content` JSON;
 - the production offset golden measurement pipeline;
 - filter, energy and error handling.
 
