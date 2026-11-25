@@ -73,6 +73,7 @@ Pour commencer l'installation et la configuration de mon appareil, veuillez cons
 | **Détails de Configuration** | Explications détaillées sur les options spécifiques au Sonoff POW CT et l'utilisation des **fonctions de debug** avancées. | **[Doc/SONOFF_POWCT_CONFIG_FR.md](Doc/SONOFF\_POWCT\_CONFIG\_FR.md)** |
 | **Datasheet** | Manuel technique du circuit de mesure d'énergie **CSE7761**. | **[Doc/CSE7761UserManual\_1672133056.pdf](Doc/CSE7761UserManual\_1672133056.pdf)** |
 | **Documentation d'ingénierie** | Spécification, conception, plan de test et ADR (anglais). | **[Doc/README.md](Doc/README.md)** |
+| **Versions validées** | Versions ESPHome, ESP-IDF et outils de développement. | **[Doc/VERSIONS.md](Doc/VERSIONS.md)** |
 
 ***
 

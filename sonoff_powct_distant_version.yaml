@@ -11,7 +11,6 @@ esp32:
   board: nodemcu-32s
   framework:
     type: esp-idf
-    version: 5.4.0 # bugs with newest versions in esphome 2025.12.4
 
 preferences:
   flash_write_interval: 1h

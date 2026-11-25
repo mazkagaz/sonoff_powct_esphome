@@ -11,6 +11,7 @@ and French.
 - [DESIGN.md](DESIGN.md) — architecture, protocol, calibration and energy.
 - [TEST_PLAN.md](TEST_PLAN.md) — test strategy, levels and release gates.
 - [TEST_MATRIX.md](TEST_MATRIX.md) — requirement-to-test traceability.
+- [VERSIONS.md](VERSIONS.md) — validated tool versions and update policy.
 - [ADR/0001-doctest.md](ADR/0001-doctest.md) — host test framework choice.
 - [ADR/0002-documentation-language.md](ADR/0002-documentation-language.md) —
   documentation language policy.

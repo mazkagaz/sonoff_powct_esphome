@@ -21,14 +21,17 @@
 ## 3. Environments
 
 - Host: Linux with Git, Python 3.13 (`venv`/`pip`), CMake/CTest ≥3.16, a C++17
-  compiler and Make or Ninja. Tested versions are listed in
-  [../CONTRIBUTING.md](../CONTRIBUTING.md#prerequisites).
-- ESPHome: 2026.11.1 pinned in `requirements-dev.txt`; current stable is checked
-  separately when available.
+  compiler and Make or Ninja. Exact tested versions are listed in
+  [VERSIONS.md](VERSIONS.md).
+- ESPHome: 2026.11.1 pinned in `requirements-dev.txt`; ESP-IDF 5.5.6 selected by
+  ESPHome (no manual YAML pin). Current stable is checked separately when
+  available.
 - Network: required on the first CMake configure (doctest FetchContent) and for
   ESPHome component/toolchain downloads.
 - Hardware: standard POW CT; optional Ring 100 A only as an exploratory variant.
 - Secrets in CI: generated dummy `secrets.yaml`; never real credentials.
+- Framework: the YAML does not pin ESP-IDF; ESPHome selects its recommended
+  version. Compilation was validated with ESPHome 2026.11.1 and that framework.
 
 ## 4. Test data
 
@@ -91,7 +94,7 @@ Phase 3.
 
 ## 9. Coverage and quality gates
 
-- ≥90 % line and branch coverage on `core/` pure logic.
+- ≥90 % line and branch coverage on `cse7761_core_*` pure logic.
 - 100 % branch coverage on checksum, range selection and calibration fallback.
 - No decrease in core coverage on a PR.
 - HIL results recorded before a release that changes measurement.

@@ -16,6 +16,10 @@ All notable changes to this project are documented here. The format follows
 - Host test skeleton using doctest and CTest.
 - `requirements-dev.txt` and documented host prerequisites (CMake, compiler,
   Python/venv, ESPHome version).
+- `Doc/VERSIONS.md` with the validated ESPHome/ESP-IDF/tool versions, plus
+  user-facing validated-version notes in the installation guides.
+- Host-testable `cse7761_core_*` headers for protocol, conversion, calibration
+  and energy, with 21 doctest cases.
 - Pull request template and CI workflow for documentation links and host tests.
 
 ### Changed
@@ -24,6 +28,10 @@ All notable changes to this project are documented here. The format follows
   `regiter_value` typo field.
 - OTA uses `encryption:` inherited from the API key instead of an OTA password.
 - YAML examples use documented substitutions and `!secret` placeholders.
+- Component protocol, conversion, calibration and energy logic now use the
+  host-testable core headers.
+- Removed the historical ESP-IDF 5.4.0 pin from both YAML files; ESPHome now
+  selects its recommended framework version.
 - Documentation uses English/French language selectors; Spanish docs removed.
 
 ### Fixed
@@ -33,6 +41,9 @@ All notable changes to this project are documented here. The format follows
 - Sensor IDs `w_sensor`/`a_sensor` corrected to `w_sensor_1`/`a_sensor_1` in the
   PF lambda and display.
 - Single-CT limitation clarified in README and configuration docs.
+- Energy timing now uses unsigned millisecond arithmetic, avoiding the
+  `millis()` wrap issue.
+- A zero conversion coefficient is rejected instead of dividing by zero.
 
 ### Removed
 

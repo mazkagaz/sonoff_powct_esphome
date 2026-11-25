@@ -54,7 +54,11 @@ current validation; newer compatible versions are acceptable.
 | C++17 compiler | GCC 14.2 / Clang | Host tests and doctest |
 | Make or Ninja | GNU Make 4.4.1 tested | CMake generator |
 | ESPHome | 2026.11.1 pinned in `requirements-dev.txt` | Config validation and compile |
+| ESP-IDF | 5.5.6, selected by ESPHome | Build framework; no manual YAML pin |
 | esptool / espefuse | optional, bundled with ESPHome | Flashing and diagnostics |
+
+The authoritative list, verification date and update procedure are in
+[Doc/VERSIONS.md](Doc/VERSIONS.md).
 
 On Debian/Ubuntu, the system packages are:
 
@@ -83,6 +87,19 @@ For the local YAML, copy `components/cse7761` to `my_components/cse7761` (or use
 the remote YAML). Create `secrets.yaml` from `secrets.yaml.example` before
 running `esphome config`.
 
+## Tool and version updates
+
+When upgrading ESPHome, ESP-IDF, Python, CMake, the compiler or doctest:
+
+1. update `requirements-dev.txt` and/or the doctest pin in
+   `tests/host/CMakeLists.txt`;
+2. update [Doc/VERSIONS.md](Doc/VERSIONS.md) and the validated-environment note
+   in [Doc/INSTALL.md](Doc/INSTALL.md) / [Doc/INSTALL_FR.md](Doc/INSTALL_FR.md);
+3. run the host tests, `esphome config` on both YAML files and a real compile;
+4. add a changelog fragment.
+
+Do not leave a guide claiming a version that was not actually verified.
+
 ## Tests
 
 ```bash
@@ -92,8 +109,9 @@ ctest --test-dir build/host --output-on-failure
 ```
 
 - Host tests use **doctest** (see [Doc/ADR/0001-doctest.md](Doc/ADR/0001-doctest.md)).
-- Pure logic belongs in `components/cse7761/core/` so it can be tested on the
-  host without ESPHome.
+- Pure logic belongs in `components/cse7761/cse7761_core_*.h` so it can be
+  tested on the host without ESPHome. ESPHome copies only component-root files,
+  so do not put these headers in a subdirectory.
 - Functional tests use a fake UART transport and recorded frames.
 - Hardware-in-the-loop tests follow [Doc/TEST_PLAN.md](Doc/TEST_PLAN.md); they are
   required before a release that changes measurement.

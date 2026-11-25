@@ -1,5 +1,9 @@
 **English** | [Français](INSTALL_FR.md)
 
+> **Validated environment (2026-11-25):** ESPHome **2026.11.1**, ESP-IDF
+> **5.5.6** (selected by ESPHome; no manual pin), Python **3.13.5**. Newer
+> versions may work; the authoritative list is [VERSIONS.md](VERSIONS.md).
+
 ***
 
 ## 🛠️ Initial Flashing Procedure
