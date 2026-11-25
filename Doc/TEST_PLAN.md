@@ -70,6 +70,7 @@ measurements. See [tests/golden/README.md](../tests/golden/README.md).
 | Filter | Median/trimmed mean, reset threshold, short windows | `UNIT-FILTER` |
 | Energy | Import/export integration, anti-creep, reboot restore, `millis()` wrap | `UNIT-ENERGY` |
 | Errors | Timeout, keep-last-good, 100-failure policy | `UNIT-ERR` |
+| Calibration status | offset, stock pending, NVS found/not found/invalid/unavailable | `UNIT-STATUS` |
 
 ## 6. Functional tests
 

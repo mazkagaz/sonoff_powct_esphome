@@ -28,6 +28,28 @@
 The stock mode is opt-in; its measurement accuracy is not yet validated on
 hardware.
 
+## Calibration status entity
+
+For a device without physical access, expose the calibration state as a
+diagnostic text sensor:
+
+```yaml
+text_sensor:
+  - platform: template
+    id: cse7761_calibration_status
+    name: "CSE7761 Calibration Status"
+    entity_category: diagnostic
+
+sensor:
+  - platform: cse7761
+    calibration_mode: stock
+    calibration_status: cse7761_calibration_status
+```
+
+Reported values include `offset`, `stock: <namespace>/<key>`,
+`stock: identity (not found)`, `stock: identity (invalid payload)` and
+`stock: NVS unavailable`.
+
 ## Measurement channels and CT
 
 | Channel | Use in this firmware |

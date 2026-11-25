@@ -92,12 +92,17 @@ text_sensor:
     id: lecture_registre_debug_bin
     name: "CSE7761 Lecture Registre (binaire)"
     entity_category: diagnostic
+  - platform: template
+    id: cse7761_calibration_status
+    name: "CSE7761 Calibration Status"
+    entity_category: diagnostic
     
 sensor:
   - platform: cse7761
     id: cse7761_comp
     # offset: current channel-B bias correction; stock: 18 NVS coefficients (read-only)
     calibration_mode: offset
+    calibration_status: cse7761_calibration_status
     update_interval: 2s
     debug_sensor_hex_id: lecture_registre_debug_hex
     debug_sensor_bin_id: lecture_registre_debug_bin

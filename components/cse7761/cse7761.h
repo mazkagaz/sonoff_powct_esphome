@@ -8,6 +8,7 @@
 #include "esphome/core/component.h"
 #include "esphome/core/preferences.h"
 #include "cse7761_core_stock_calibration.h"
+#include <string>
 #include <vector>
 
 
@@ -48,6 +49,7 @@ namespace esphome {
       // Setter pour le text_sensor qui affichera le résultat
       void set_debug_text_sensor_hex(text_sensor::TextSensor *debug_sensor_hex) { debug_sensor_hex_ = debug_sensor_hex; }
       void set_debug_text_sensor_bin(text_sensor::TextSensor *debug_sensor_bin) { debug_sensor_bin_ = debug_sensor_bin; }
+      void set_calibration_status_sensor(text_sensor::TextSensor *sensor) { calibration_status_sensor_ = sensor; }
       void read_register_service(std::string register_number_str, int size);
       void write_register_service(std::string register_number_str, std::string value_str);
       void set_calibration_mode(bool state);
@@ -62,6 +64,7 @@ namespace esphome {
       sensor::Sensor *current_sensor_2_{nullptr};
       text_sensor::TextSensor *debug_sensor_hex_{nullptr};
       text_sensor::TextSensor *debug_sensor_bin_{nullptr};
+      text_sensor::TextSensor *calibration_status_sensor_{nullptr};
       sensor::Sensor *energy_received_{nullptr};
       sensor::Sensor *energy_exported_{nullptr};
       CSE7761DataStruct data_;
@@ -84,6 +87,8 @@ namespace esphome {
       bool stock_calibration_enabled_{false};
       cse7761_core::StockCalibration stock_calibration_{};
       uint8_t stock_range_{1};
+      std::string calibration_status_{"offset"};
+      bool calibration_status_published_{false};
       uint32_t last_update_time_{0};
       uint32_t last_save_time_{0};
       double accumulated_energy_received_{0.0f};
@@ -98,6 +103,7 @@ namespace esphome {
       std::vector<uint8_t> read_register(int reg, int size);
       void perform_calibration_write_();
       void probe_stock_calibration_();
+      void publish_calibration_status_();
     };
 
   }  // namespace cse7761

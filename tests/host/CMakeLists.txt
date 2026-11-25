@@ -12,6 +12,7 @@ add_executable(host_tests
     test_calibration.cpp
     test_stock_calibration.cpp
     test_stock_conversion.cpp
+    test_calibration_status.cpp
     test_golden_measurements.cpp
     test_energy.cpp
 )

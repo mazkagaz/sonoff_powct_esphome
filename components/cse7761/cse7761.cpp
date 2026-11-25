@@ -1,6 +1,7 @@
 #include "cse7761.h"
 
 #include "cse7761_core_calibration.h"
+#include "cse7761_core_calibration_status.h"
 #include "cse7761_core_conversion.h"
 #include "cse7761_core_energy.h"
 #include "cse7761_core_protocol.h"
@@ -119,6 +120,8 @@ namespace esphome {
     //***********************************************************************************************
     void CSE7761Component::set_stock_calibration(bool state) {
       this->stock_calibration_enabled_ = state;
+      this->calibration_status_ = cse7761_core::calibration_status_text(
+          state, cse7761_core::StockCalibrationProbe::Pending);
     }
 
     //***********************************************************************************************
@@ -130,12 +133,15 @@ namespace esphome {
       static const char *const keys[] = {
           "calib_coefficient0", "calib_coefficient", "calib_coefficient1"};
       char buffer[512];
+      bool invalid_payload = false;
 
       for (const char *ns : namespaces) {
         nvs_handle_t handle;
         const esp_err_t open_error = nvs_open(ns, NVS_READONLY, &handle);
         if (open_error == ESP_ERR_NVS_NOT_INITIALIZED) {
           ESP_LOGW(TAG, "NVS is not initialized; stock calibration unavailable");
+          this->calibration_status_ = cse7761_core::calibration_status_text(
+              true, cse7761_core::StockCalibrationProbe::NvsUnavailable);
           break;
         }
         if (open_error != ESP_OK) {
@@ -152,9 +158,12 @@ namespace esphome {
             ESP_LOGD(TAG, "Stock calibration payload: %s", buffer);
             if (cse7761_core::parse_stock_calibration(std::string(buffer), this->stock_calibration_)) {
               ESP_LOGI(TAG, "Stock calibration parsed and enabled");
+              this->calibration_status_ = cse7761_core::calibration_status_text(
+                  true, cse7761_core::StockCalibrationProbe::Found, ns, key);
               nvs_close(handle);
               return;
             }
+            invalid_payload = true;
             ESP_LOGW(TAG, "Stock calibration payload is invalid; trying next candidate");
           } else if (read_error != ESP_ERR_NVS_NOT_FOUND) {
             ESP_LOGW(TAG, "Reading NVS key '%s' in namespace '%s' failed: %s", key, ns,
@@ -165,7 +174,20 @@ namespace esphome {
       }
 
       this->stock_calibration_ = cse7761_core::identity_stock_calibration();
+      this->calibration_status_ = cse7761_core::calibration_status_text(
+          true, invalid_payload ? cse7761_core::StockCalibrationProbe::InvalidPayload
+                                : cse7761_core::StockCalibrationProbe::NotFound);
       ESP_LOGW(TAG, "No valid stock calibration found; using identity coefficients");
+    }
+
+    //***********************************************************************************************
+    // publish_calibration_status_ : expose the active calibration mode to Home Assistant
+    //***********************************************************************************************
+    void CSE7761Component::publish_calibration_status_() {
+      if (this->calibration_status_sensor_ != nullptr) {
+        this->calibration_status_sensor_->publish_state(this->calibration_status_);
+      }
+      this->calibration_status_published_ = true;
     }
 
     //***********************************************************************************************
@@ -224,7 +246,7 @@ namespace esphome {
       if (this->stock_calibration_enabled_) {
         ESP_LOGCONFIG(TAG, "Stock calibration valid: %s", this->stock_calibration_.valid ? "yes" : "no");
       }
-      this->check_uart_settings(38400, 1, uart::UART_CONFIG_PARITY_EVEN, 8);
+      ESP_LOGCONFIG(TAG, "Calibration status: %s", this->calibration_status_.c_str());
     }
 
     //***********************************************************************************************
@@ -236,6 +258,9 @@ namespace esphome {
     // update : measurements update
     //***********************************************************************************************
     void CSE7761Component::update() {
+      if (!this->calibration_status_published_) {
+        this->publish_calibration_status_();
+      }
       if (this->data_.ready) {this->get_data_();}
     }
 
