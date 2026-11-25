@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [2.2.0] - 2026-11-25
+
 ### Added
 
 - English/French flashing guide covering factory vs app-only/OTA images,
@@ -65,6 +69,42 @@ All notable changes to this project are documented here. The format follows
 - Spanish documentation (`README_ES.md`, `Doc/INSTALL_ES.md`,
   `Doc/CALIBRATION_ES.md`).
 
-## Released versions
+## [2.1.0] - 2025-12-28
 
-No tagged release yet. The first release will use `vX.Y.Z` and a dated section.
+### Changed
+
+- Reversed-engineered the register conversion coefficients: K1 = 4.7, K2 = 1,
+  gain 0 on all measurement registers.
+- Removed the artificial division-by-pi workaround and the related high-gain
+  saturation issue.
+- Measurements compared against a Shelly EM reference.
+
+## [2.0.1] - 2025-10-28
+
+### Added
+
+- Signed quantities, calibration and bidirectional energy measurement.
+
+### Changed
+
+- `Energy received` replaces `total_daily_energy`; same result unless the energy
+  sensor is treated as an all-time counter.
+
+## [1.0.1] - 2025-10-25
+
+### Added
+
+- YAML configuration example pointing to the GitHub component source.
+
+## [1.0.0] - 2025-10-25
+
+### Added
+
+- Initial stable CSE7761 component, documentation and YAML for the Sonoff POW CT.
+
+[Unreleased]: https://github.com/mazkagaz/sonoff_powct_esphome/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/mazkagaz/sonoff_powct_esphome/compare/v2.1.0...v2.2.0
+[2.1.0]: https://github.com/mazkagaz/sonoff_powct_esphome/compare/v2.0.1...v2.1.0
+[2.0.1]: https://github.com/mazkagaz/sonoff_powct_esphome/compare/v1.0.1...v2.0.1
+[1.0.1]: https://github.com/mazkagaz/sonoff_powct_esphome/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/mazkagaz/sonoff_powct_esphome/releases/tag/v1.0.0
