@@ -23,7 +23,7 @@ Pass = green in CI/HIL; N/A = not applicable.
 | REQ-SAFE-001 | DOC-CHECK-001 | Docs | Planned |
 | REQ-DOC-001 | DOC-CHECK-001, PR-CHECK-001 | Docs/Process | Partial |
 | REQ-TEST-001 | CI-HOST-001, PR-CHECK-001 | CI/Process | Partial |
-| NFR-ACC-001 | HIL-ACC-001..003 | HIL | Planned |
+| NFR-ACC-001 | REF-ACC-001..006 | Reference/manual | Pending — NOT EXECUTED |
 | NFR-REL-001 | HIL-SOAK-001 | HIL | Planned |
 | NFR-COMP-001 | CI-ESPHOME-001 | CI | Partial |
 | NFR-PERF-001 | HIL-CADENCE-001 | HIL | Planned |
@@ -37,3 +37,5 @@ Pass = green in CI/HIL; N/A = not applicable.
 - `esphome config` passes for both YAML files.
 - The component compiles with ESPHome 2026.11.1 and ESP-IDF 5.5.6 (selected by
   ESPHome); the historical `5.4.0` pin has been removed.
+- Manual reference validation (POW CT vs Shelly EM) is documented but
+  **NOT EXECUTED**: no measurements have been collected yet.

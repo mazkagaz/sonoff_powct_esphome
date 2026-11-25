@@ -61,7 +61,7 @@ support for the Ring 100 A variant, and a full energy-meter certification.
 
 | ID | Requirement | Acceptance criteria |
 |---|---|---|
-| NFR-ACC-001 | Measurement accuracy (provisional target). | Within ±1 % of reading from 10 % to 100 % of range and ±2 % below 10 %, against a reference meter; to be validated on the bench. |
+| NFR-ACC-001 | Measurement accuracy (provisional target). | Within ±1 % of reading from 10 % to 100 % of range and ±2 % below 10 %, against a reference meter; **validation status: NOT EXECUTED** — manual Shelly EM comparison planned, see [REFERENCE_VALIDATION.md](REFERENCE_VALIDATION.md). |
 | NFR-REL-001 | Stable operation across reboot and network loss. | No crash or watchdog reset over a 72 h soak; energy survives reboot. |
 | NFR-COMP-001 | Build compatibility. | Compiles with the ESPHome version pinned in `requirements-dev.txt` and the ESP-IDF framework it recommends; no manual ESP-IDF pin. |
 | NFR-PERF-001 | Responsive device. | UART and measurement work do not block the ESPHome loop; publish cadence is met. |

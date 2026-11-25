@@ -1,0 +1,1 @@
+date,firmware_version,powct_revision,shelly_model,load_w,power_factor,ct_direction,voltage_powct_v,voltage_reference_v,current_powct_a,current_reference_a,power_powct_w,power_reference_w,energy_powct_kwh,energy_reference_kwh,duration_min,notes
