@@ -87,9 +87,19 @@ calibration must be pure functions for host tests.
 
 - **Current implementation:** offset-only bias correction using channel B; values
   are held in RAM and are not the stock quadratic model.
+- **Stock core (implemented):** `cse7761_core_stock_calibration.h` provides the
+  18-coefficient model, quadratic application, 500 mA range selection, identity
+  fallback and the parser for the stock NVS payload.
+- **Stock conversion (implemented):** `cse7761_core_stock_conversion.h` implements
+  the stock mV/mA/mW formulas and the `0.2033` constant.
+- **Integration (opt-in):** `calibration_mode: stock` probes the NVS read-only
+  (`calib_coefficient0` and candidate namespaces), applies the stock conversion
+  and 18 coefficients, and falls back to identity if no valid payload is found.
+  `calibration_mode: offset` remains the default and preserves the previous
+  channel-B bias correction.
 - **Target (stock parity):** 18 doubles, six groups of `(a,b,c)` for current,
   voltage and power, low/high range; fallback identity `[0,1e6,0]`; negative
-  result clamps to zero.
+  result clamps to zero. Accuracy validation remains pending.
 - Calibration source order: explicit user calibration → stock NVS → identity.
 - Channel B is not a second CT; it is an inactive reference. A modified board
   with a second CT needs a separate calibration and a different bias strategy.

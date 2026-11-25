@@ -45,7 +45,7 @@ support for the Ring 100 A variant, and a full energy-meter certification.
 | REQ-MEAS-004 | Respect an anti-creep threshold. | Below the configured threshold (stock: about 2 W), active power is reported as zero. | Planned / stock parity |
 | REQ-MEAS-005 | Run measurement at 80 ms, publish at 1 s and persist energy hourly. | Cadence is configurable; defaults match the requirement; no blocking loop. | Planned |
 | REQ-CAL-001 | Apply the stock conversion constants and units. | Raw registers are converted to mV/mA/mW using the stock formulas and `0.2033` K1 value. | Planned / stock parity |
-| REQ-CAL-002 | Apply 18 quadratic coefficients across two ranges. | Six groups of `(a,b,c)` for current, voltage and power, low/high range; high range when converted current ≥ 500 mA; negative results clamp to zero. | Planned |
+| REQ-CAL-002 | Apply 18 quadratic coefficients across two ranges. | Six groups of `(a,b,c)` for current, voltage and power, low/high range; high range when converted current ≥ 500 mA; negative results clamp to zero. Opt-in `calibration_mode: stock` implemented; accuracy validation pending. | Current (opt-in) |
 | REQ-CAL-003 | Fall back safely when calibration is absent or invalid. | Identity calibration `[0,1e6,0]` is used; malformed data is rejected and logged, never applied partially. | Planned |
 | REQ-ENERGY-001 | Integrate filtered, calibrated power into energy. | Energy uses the same filtered value as publication; reboot restores the last persisted value. | Current / to verify |
 | REQ-COMM-001 | Communicate with the CSE7761 over UART. | 38400 baud, 8E1, GPIO25 RX / GPIO26 TX; `0xA5` frames; checksum over all data bytes. | Current |

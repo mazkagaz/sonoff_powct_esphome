@@ -4,8 +4,11 @@
 #include "cse7761_core_conversion.h"
 #include "cse7761_core_energy.h"
 #include "cse7761_core_protocol.h"
+#include "cse7761_core_stock_calibration.h"
+#include "cse7761_core_stock_conversion.h"
 
 #include "esphome/core/log.h"
+#include "nvs.h"
 
 #include <sstream>
 #include <iomanip>
@@ -88,6 +91,9 @@ namespace esphome {
           this->accumulated_energy_received_ = 0.0f;
           this->accumulated_energy_exported_ = 0.0f;
         }
+        if (this->stock_calibration_enabled_) {
+          this->probe_stock_calibration_();
+        }
       } else {
         this->mark_failed();
       }
@@ -106,6 +112,60 @@ namespace esphome {
           this->sum_power_B_ = 0;
         }
       }
+    }
+
+    //***********************************************************************************************
+    // set_stock_calibration : enable the stock 18-coefficient pipeline (opt-in)
+    //***********************************************************************************************
+    void CSE7761Component::set_stock_calibration(bool state) {
+      this->stock_calibration_enabled_ = state;
+    }
+
+    //***********************************************************************************************
+    // probe_stock_calibration_ : read the stock calibration string from NVS, read-only
+    //***********************************************************************************************
+    void CSE7761Component::probe_stock_calibration_() {
+      static const char *const namespaces[] = {
+          "nvs", "user", "iotgo", "sonoff", "esf", "calib", "config", "storage", "app"};
+      static const char *const keys[] = {
+          "calib_coefficient0", "calib_coefficient", "calib_coefficient1"};
+      char buffer[512];
+
+      for (const char *ns : namespaces) {
+        nvs_handle_t handle;
+        const esp_err_t open_error = nvs_open(ns, NVS_READONLY, &handle);
+        if (open_error == ESP_ERR_NVS_NOT_INITIALIZED) {
+          ESP_LOGW(TAG, "NVS is not initialized; stock calibration unavailable");
+          break;
+        }
+        if (open_error != ESP_OK) {
+          ESP_LOGV(TAG, "NVS namespace '%s' not readable: %s", ns, esp_err_to_name(open_error));
+          continue;
+        }
+
+        for (const char *key : keys) {
+          size_t length = sizeof(buffer);
+          const esp_err_t read_error = nvs_get_str(handle, key, buffer, &length);
+          if (read_error == ESP_OK) {
+            ESP_LOGI(TAG, "Stock calibration found in NVS namespace '%s', key '%s' (%u bytes)",
+                     ns, key, static_cast<unsigned>(length));
+            ESP_LOGD(TAG, "Stock calibration payload: %s", buffer);
+            if (cse7761_core::parse_stock_calibration(std::string(buffer), this->stock_calibration_)) {
+              ESP_LOGI(TAG, "Stock calibration parsed and enabled");
+              nvs_close(handle);
+              return;
+            }
+            ESP_LOGW(TAG, "Stock calibration payload is invalid; trying next candidate");
+          } else if (read_error != ESP_ERR_NVS_NOT_FOUND) {
+            ESP_LOGW(TAG, "Reading NVS key '%s' in namespace '%s' failed: %s", key, ns,
+                     esp_err_to_name(read_error));
+          }
+        }
+        nvs_close(handle);
+      }
+
+      this->stock_calibration_ = cse7761_core::identity_stock_calibration();
+      ESP_LOGW(TAG, "No valid stock calibration found; using identity coefficients");
     }
 
     //***********************************************************************************************
@@ -160,6 +220,10 @@ namespace esphome {
         ESP_LOGE(TAG, ESP_LOG_MSG_COMM_FAIL);
       }
       LOG_UPDATE_INTERVAL(this);
+      ESP_LOGCONFIG(TAG, "Calibration mode: %s", this->stock_calibration_enabled_ ? "stock" : "offset");
+      if (this->stock_calibration_enabled_) {
+        ESP_LOGCONFIG(TAG, "Stock calibration valid: %s", this->stock_calibration_.valid ? "yes" : "no");
+      }
       this->check_uart_settings(38400, 1, uart::UART_CONFIG_PARITY_EVEN, 8);
     }
 
@@ -317,6 +381,7 @@ namespace esphome {
     void CSE7761Component::get_data_() {
       uint32_t uvalue;
       int32_t svalue;
+      const bool stock_active = this->stock_calibration_enabled_ && this->stock_calibration_.valid;
 
       // The effective value of current and voltage Rms is a 24-bit signed number,
       // the highest bit is 0 for valid data, <-- NO : it is the sign bit on 24 bits for current
@@ -329,17 +394,39 @@ namespace esphome {
       // without ac power and measure the noise to calibrate the tension
       uvalue = this->read_(CSE7761_REG_RMSU, 3);
       this->data_.voltage_rms = (uvalue >= 0x800000) ? 0 : uvalue;
-      float voltage = cse7761_core::voltage_from_raw(
-          this->data_.voltage_rms, this->coefficient_by_unit_(cse7761_core::RMS_UC));
+      float voltage;
+      if (stock_active) {
+        const uint32_t voltage_mv = cse7761_core::stock_voltage_mv(
+            this->data_.voltage_rms, this->data_.coefficient[cse7761_core::RMS_UC]);
+        voltage = cse7761_core::apply_stock_calibration(
+                      this->stock_calibration_, voltage_mv, 0.0, 0.0, this->stock_range_)
+                      .voltage_mv /
+                  1000.0f;
+      } else {
+        voltage = cse7761_core::voltage_from_raw(
+            this->data_.voltage_rms, this->coefficient_by_unit_(cse7761_core::RMS_UC));
+      }
       if (this->voltage_sensor_ != nullptr) {
         this->voltage_sensor_->publish_state(voltage);
       }
 
       svalue = this->read_(CSE7761_REG_RMSIA, 3);
       this->data_.current_rms[0] = cse7761_core::sign_extend_24(static_cast<uint32_t>(svalue));
-      this->active_current_A_ = cse7761_core::current_from_raw(
-          static_cast<uint32_t>(svalue), this->coefficient_by_unit_(cse7761_core::RMS_IAC)) +
-          this->software_current_offset_A_;
+      if (stock_active) {
+        const uint32_t current_ma = cse7761_core::stock_current_ma(
+            static_cast<uint32_t>(svalue), this->data_.coefficient[cse7761_core::RMS_IAC]);
+        const uint8_t range = cse7761_core::select_stock_range(current_ma);
+        this->active_current_A_ = cse7761_core::apply_stock_calibration(
+                                      this->stock_calibration_, 0.0, current_ma, 0.0, range)
+                                      .current_ma /
+                                  1000.0;
+        this->stock_range_ = range;
+      } else {
+        this->active_current_A_ = cse7761_core::current_from_raw(
+                                      static_cast<uint32_t>(svalue),
+                                      this->coefficient_by_unit_(cse7761_core::RMS_IAC)) +
+                                  this->software_current_offset_A_;
+      }
       if (this->current_sensor_1_ != nullptr) {
         this->current_sensor_1_->publish_state(this->active_current_A_);
       }
@@ -363,9 +450,21 @@ namespace esphome {
       uint32_t now = esphome::millis();
       svalue = this->read_(CSE7761_REG_POWERPA, 4);
       this->data_.active_power[0] = (int32_t) svalue;
-      this->active_power_A_ = cse7761_core::power_from_raw(
-          static_cast<uint32_t>(svalue), this->coefficient_by_unit_(cse7761_core::POWER_PAC)) +
-          this->software_power_offset_A_;
+      if (stock_active) {
+        const uint32_t power_mw = cse7761_core::stock_power_mw(
+            static_cast<uint32_t>(svalue), this->data_.coefficient[cse7761_core::POWER_PAC]);
+        const double magnitude = cse7761_core::apply_stock_calibration(
+                                     this->stock_calibration_, 0.0, 0.0, power_mw,
+                                     this->stock_range_)
+                                     .power_mw /
+                                 1000.0;
+        this->active_power_A_ = (static_cast<int32_t>(svalue) < 0) ? -magnitude : magnitude;
+      } else {
+        this->active_power_A_ = cse7761_core::power_from_raw(
+                                    static_cast<uint32_t>(svalue),
+                                    this->coefficient_by_unit_(cse7761_core::POWER_PAC)) +
+                                this->software_power_offset_A_;
+      }
       ESP_LOGD(TAG, "Puissance: %f", this->active_power_A_);
       if (this->power_sensor_1_ != nullptr) {
         this->power_sensor_1_->publish_state(this->active_power_A_);
@@ -432,7 +531,7 @@ namespace esphome {
  *       ESP_LOGD(TAG, "Différence des puissances brutes à vide %d", this->data_.active_power[0]-this->data_.active_power[1]);
  *       ESP_LOGD(TAG, "Rapport des puissances brutes à vide %f", (float) this->data_.active_power[0] / (float) this->data_.active_power[1]);*/
 
-      if (this->calibration_enabled_) {
+      if (this->calibration_enabled_ && !stock_active) {
         // calibrating
         if (this->calibration_count_ == 0) {
           this->sum_current_B_ = 0;

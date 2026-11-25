@@ -15,7 +15,13 @@ Phase 1 contains a toolchain smoke test. Phase 2 adds tests for the extracted
 
 - protocol framing and checksums;
 - stock conversions and ranges;
-- quadratic calibration and fallback;
+- quadratic calibration, stock NVS parser and fallback;
+- stock conversion, stock calibration and range selection;
+- the production offset golden measurement pipeline;
 - filter, energy and error handling.
+
+The golden pipeline test reads `../golden/measurements.csv`; changing an expected
+value requires `approved_by`/`approval_reason` and a manual review. Production
+rows are not captured yet.
 
 Test data such as recorded UART frames belongs in `tests/data/`.
