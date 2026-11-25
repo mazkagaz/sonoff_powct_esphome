@@ -2,6 +2,7 @@ secrets.yaml
 .esphome/
 build/
 .venv/
+.node/
 __pycache__/
 *.pyc
 .pytest_cache/
